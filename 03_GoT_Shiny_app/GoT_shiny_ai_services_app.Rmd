@@ -27,7 +27,7 @@ include_graphics("./images/lab_scenario.png")
 
 **Now it is your turn!**
 
-We start our journey with the image below. It includes a famous quote from Tyrion Lannister from GoT season 6 when the show was at its peak (Who else is still haunted by season 8?). The image was deployed with our LiftOff app so we don't need to upload it again.
+We start our journey with the image below. It includes a famous quote from Tyrion Lannister from GoT season 6 when the show was at its peak (Who else is still haunted by season 8?). The image was deployed with our Shiny app so we don't need to upload it again.
 
 <center>
 ```{r echo=FALSE, out.width = "40%"}
@@ -38,7 +38,7 @@ include_graphics("./images/tyrion_quote.jpg")
 <br/><br/>
 **Step 1 - Using Amazon Rekognition**
 
-Please press the button below which sends the image to Amazon Rekognition to detect and return the text on the coffee mug. Once our LiftOff app has parsed the response from AWS Rekognition, the detected text appears below the **Send image** button.
+Please press the button below which sends the image to Amazon Rekognition to detect and return the text on the coffee mug. Once our Shiny app has parsed the response from AWS Rekognition, the detected text appears below the **Send image** button.
 
 ```{r echo=FALSE}
 actionButton("submitimage", "Send image", class = "btn-warning")
@@ -80,7 +80,7 @@ textInput("imagetext", "Text to translate")
 
 ```
 
-Now it is time to send the text in the **Text to translate** text box to Amazon Translate. Amazon Translate can translate text between various languages back and forth. We will translate our English text to Spanish. Once our LiftOff app has parsed the response from AWS Translate, the translated text appears below the **Translate text** button. Go ahead and press it!
+Now it is time to send the text in the **Text to translate** text box to Amazon Translate. Amazon Translate can translate text between various languages back and forth. We will translate our English text to Spanish. Once our Shiny app has parsed the response from AWS Translate, the translated text appears below the **Translate text** button. Go ahead and press it!
 
 ```{r echo=FALSE}
 actionButton("translate_text_button", "Translate text", class = "btn-warning")
@@ -143,7 +143,7 @@ download_message <- eventReactive(get_audio_file(), {
 <br/><br/>
 **Step 4 - Listening to Lupe**
 
-The text Amazon Polly synthesized and returned to our LiftOff app is now ready to download. Press the **Download** button and listen to the result using an audio player on your machine. 
+The text Amazon Polly synthesized and returned to our Shiny app is now ready to download. Press the **Download** button and listen to the result using an audio player on your machine. 
 
 ```{r echo=FALSE}
 downloadHandler(
