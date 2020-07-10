@@ -143,4 +143,4 @@ deployApp(appDir = app_dir, appName = "got_shiny_ai_services_lab")
 ```
 
 Once the `rsconnect` finished the deployment it will automatically open
-the link your app in the brower.
+the link to your app in the brower.

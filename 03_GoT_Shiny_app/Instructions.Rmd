@@ -116,8 +116,7 @@ app_dir <- paste0(getwd(), "/03_GoT_Shiny_app")
 deployApp(appDir = app_dir, appName = "got_shiny_ai_services_lab")
 ```
 
-
-Once the `rsconnect` finished the deployment it will automatically open the link your app in the brower. 
+Once `rsconnect` finished the deployment it will automatically open the link to your app in the browser. 
 
 
 
