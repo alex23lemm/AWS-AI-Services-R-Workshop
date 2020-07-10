@@ -21,9 +21,8 @@ know and used in the second workshop module.
 Our Shiny application is a [Shiny
 document](https://bookdown.org/yihui/rmarkdown/shiny-documents.html)
 based on a R Markdown file. Check out the source code in the
-[GoT\_shiny\_ai\_services\_app.Rmd
-file](/GoT_shiny_ai_services_app.Rmd). We also deployed the app to
-shinyapps.io and you can access it
+[GoT\_shiny\_ai\_services\_app.Rmd file](GoT_shiny_ai_services_app.Rmd).
+We also deployed the app to shinyapps.io and you can access it
 [here](https://alexlemm.shinyapps.io/got_ai_services_lab/). In this
 module you will deploy your version of the app.
 
