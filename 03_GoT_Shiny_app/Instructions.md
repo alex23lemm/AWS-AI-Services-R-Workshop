@@ -12,11 +12,11 @@ We will deploy a Shiny application to
 services. The Shiny application leverages the AWS API calls you already
 know and used in the second workshop module.
 
-<center>
+<p align="center">
 
 <img src="images/lab_scenario.png" width="60%" />
 
-</center>
+</p>
 
 Our Shiny application is a [Shiny
 document](https://bookdown.org/yihui/rmarkdown/shiny-documents.html)
@@ -118,11 +118,11 @@ use to access your account. Retrieve your token from the shinyapps.io
 dashboard. Tokens are listed under Tokens in the menu at the top right
 of the shinyapps dashboard (under your avatar).
 
-<center>
+<p align="center">
 
 <img src="./images/tokens.png" width="50%" />
 
-</center>
+</p>
 
 Run the ‘setAccountInfo’ function from the rsconnect package passing in
 the token and secret from the Profile / Tokens page.

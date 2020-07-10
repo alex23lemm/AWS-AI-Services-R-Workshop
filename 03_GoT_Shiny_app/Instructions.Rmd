@@ -17,11 +17,11 @@ In the third module of the **AWS AI Services for R users** workshop you will see
 
 We will deploy a Shiny application to [shinyapps.io](https://shinyapps.io) which makes calls to several AWS AI services. The Shiny application leverages the AWS API calls you already know and used in the second workshop module. 
 
-<center>
+<p align="center">
 ```{r echo=FALSE, out.width = "60%"}
 knitr::include_graphics("images/lab_scenario.png")
 ```
-</center>
+</p>
 
 Our Shiny application is a [Shiny document](https://bookdown.org/yihui/rmarkdown/shiny-documents.html) based on a R Markdown file. Check out the source code in the [GoT_shiny_ai_services_app.Rmd file](/GoT_shiny_ai_services_app.Rmd). We also deployed the app to shinyapps.io and you can access it [here](https://alexlemm.shinyapps.io/got_ai_services_lab/). In this module you will deploy your version of the app. 
 
@@ -93,11 +93,11 @@ Go to shinyapps.io and click “Dashboard.” The site will ask you to sign in u
 
 Once you set up your account in shinyapps.io, you can configure the rsconnect package to use your account. Shinyapps.io automatically generates a token and secret for you, which the rsconnect package can use to access your account. Retrieve your token from the shinyapps.io dashboard. Tokens are listed under Tokens in the menu at the top right of the shinyapps dashboard (under your avatar).
 
-<center>
+<p align="center">
 ```{r echo=FALSE, out.width = "50%"}
 knitr::include_graphics("./images/tokens.png")
 ```
-</center>
+</p>
 
 Run the ‘setAccountInfo’ function from the rsconnect package passing in the token and secret from the Profile / Tokens page.
 
