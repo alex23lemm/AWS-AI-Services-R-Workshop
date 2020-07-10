@@ -106,9 +106,9 @@ library(rsconnect)
 
 ### Set up a shinyapps.io account
 
-Go to shinyapps.io and click “Dashboard.” The site will ask you to sign
-in using your email and password, your Google account, or your GitHub
-account.
+Go to [shinyapps.io](https://shinyapps.io) and click “Dashboard.” The
+site will ask you to sign in using your email and password, your Google
+account, or your GitHub account.
 
 Once you set up your account in shinyapps.io, you can configure the
 rsconnect package to use your account. Shinyapps.io automatically
