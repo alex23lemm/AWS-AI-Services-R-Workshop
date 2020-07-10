@@ -14,7 +14,7 @@ know and used in the second workshop module.
 
 <p align="center">
 
-<img src="images/lab_scenario.png" width="60%" />
+<img src="images/lab_scenario.png" width="45%" />
 
 </p>
 

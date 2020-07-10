@@ -18,7 +18,7 @@ In the third module of the **AWS AI Services for R users** workshop you will see
 We will deploy a Shiny application to [shinyapps.io](https://shinyapps.io) which makes calls to several AWS AI services. The Shiny application leverages the AWS API calls you already know and used in the second workshop module. 
 
 <p align="center">
-```{r echo=FALSE, out.width = "60%"}
+```{r echo=FALSE, out.width = "45%"}
 knitr::include_graphics("images/lab_scenario.png")
 ```
 </p>
