@@ -4,7 +4,7 @@
 # Third workshop module: Shiny and AWS AI Services
 
 In the third module of the **AWS AI Services for R users** workshop you
-will see how quickly and easy you can add sophisticated deep learning
+will see how quickly and easily you can add sophisticated deep learning
 capabilities to your Shiny applications.
 
 We will deploy a Shiny application to
@@ -142,5 +142,5 @@ app_dir <- paste0(getwd(), "/03_GoT_Shiny_app")
 deployApp(appDir = app_dir, appName = "got_shiny_ai_services_lab")
 ```
 
-Once the `rsconnect` finished the deployment it will automatically open
-the link to your app in the brower.
+Once `rsconnect` finished the deployment it will automatically open the
+link to your app in the browser.

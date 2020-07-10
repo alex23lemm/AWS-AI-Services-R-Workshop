@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 
 # Third workshop module: Shiny and AWS AI Services
 
-In the third module of the **AWS AI Services for R users** workshop you will see how quickly and easy you can add sophisticated deep learning capabilities to your Shiny applications. 
+In the third module of the **AWS AI Services for R users** workshop you will see how quickly and easily you can add sophisticated deep learning capabilities to your Shiny applications. 
 
 We will deploy a Shiny application to [shinyapps.io](https://shinyapps.io) which makes calls to several AWS AI services. The Shiny application leverages the AWS API calls you already know and used in the second workshop module. 
 
