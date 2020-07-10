@@ -11,8 +11,13 @@ In all the examples we will utilize the fabulous [paws package](https://github.c
 
 ## Workshop modules
 
-Each workshop module consists of an R Notobook (.Rmd file) so that users can run and experiment with the code examples using their RStudio installation. 
+Each workshop module consists of an R Notebook (.Rmd file) so that users can run and experiment with the code examples using their RStudio installation. 
 
+1. Amazon Rekognition and R: You will learn how to use Amazon Rekognition's “text-in-image” and “face comparison” features from  R. Following along it will be easy for you to apply your new knowledge for using other Rekognition features, like facial analysis or celebrity recognition,  on your own. 
+
+2. Combining several AWS AI Services: In the second module you will chain several AI Services together. You'll start by using Rekognition to extract text from an image. You will pass the text to Amazon Translate to translate it into a language of your choice. After that you will use Amazon Polly to generate an MP3 file of the translated text.
+
+3. [Shiny and AWS AI Services](/03_GoT_Shiny_app/Instructions.md): You will learn how quickly and easily you can add sophisticated deep learning capabilities to your Shiny applications. We will deploy a Shiny application to [shinyapps.io](https://shinyapps.io) which makes calls to several AWS AI services. The Shiny application leverages the AWS API calls you already created and used in the second workshop module. 
 
 ## Prerequisites 
 
@@ -71,12 +76,3 @@ You are interested in using other AWS AI/ML related services from R like Amazon 
 
 * The content provided in this repository is for demonstration purposes and not meant for production. You should use your own discretion when using the content.
 * The ideas and opinions outlined in these examples are my own and do not represent the opinions of AWS.
-
-
-
-
-
-<!-- badges: end -->
-
-The goal of aws-ai-services-r-workshop is to ...
-
