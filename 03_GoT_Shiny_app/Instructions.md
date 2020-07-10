@@ -83,7 +83,7 @@ with the appropriate permissions:
 
 After completing the setup above you are now ready to run and test the
 app locally. Just open `Got_shiny_ai_services_app.Rmd` in RStudio and
-click on `Run document` which will launch the app.
+click on **Run document** which will launch the app.
 
 Once you tested everything successfully, you are now ready to deploy the
 app to shinyapps.io.

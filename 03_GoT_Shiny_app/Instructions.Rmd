@@ -68,7 +68,7 @@ If you like to use different user credentials for the app, which is actually the
 
 ### Have a short break
 
-After completing the setup above you are now ready to run and test the app locally. Just open `Got_shiny_ai_services_app.Rmd` in RStudio and click on `Run document` which will launch the app. 
+After completing the setup above you are now ready to run and test the app locally. Just open `Got_shiny_ai_services_app.Rmd` in RStudio and click on **Run document** which will launch the app. 
 
 Once you tested everything successfully, you are now ready to deploy the app to shinyapps.io. 
 
