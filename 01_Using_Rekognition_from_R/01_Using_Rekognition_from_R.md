@@ -316,8 +316,9 @@ image <- suspects %>%
 rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 5)
 image
 ```
-
+<p align="center">
 <img src="images/unnamed-chunk-14-1.png" width="60%" style="display: block; margin: auto;" />
+</p>
 
 ```r
 dev.off()
