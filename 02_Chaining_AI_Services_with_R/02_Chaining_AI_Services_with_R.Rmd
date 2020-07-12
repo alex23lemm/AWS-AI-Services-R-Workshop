@@ -92,7 +92,7 @@ write_file(polly_resp[["AudioStream"]], filename)
 
 ## Step 4 - Listening to Lupe
 
-Last but not least, let us listen to the final result. [Click here](/lupe-quoting-tyrion.mp3) to open the generated MP3 file in your audio player. 
+Last but not least, let us listen to the final result. [Click here](lupe-quoting-tyrion.mp3) to open the generated MP3 file in your audio player. 
 
 
 ## Summary
