@@ -1,0 +1,110 @@
+
+# Second workshop module: Combining AWS AI Services
+
+In the second workshop module you will learn to combine several AI Services. You'll start by using [Amazon Rekognition](https://aws.amazon.com/rekognition/) to extract text from an image. You will pass the text to [Amazon Translate](https://aws.amazon.com/translate/) to translate it into a language of your choice. After that you will use [Amazon Polly](https://aws.amazon.com/polly/) to synthesize the text and return it as an MP3 file.
+
+
+```r
+library(paws)
+library(purrr)
+library(readr)
+```
+
+We start our journey with the image below, we already know form the first workshop module: 
+
+<p align="center">
+<img src="./images/tyrion_quote.jpg" width="40%" />
+</p>
+
+
+## Step 1 - Using Amazon Rekognition
+
+You will send the image as raw bytes to the Rekognition API to extract the text from it:
+
+
+```r
+image <- read_file_raw("./images/tyrion_quote.jpg")
+  
+# Create a Rekognition client
+rekognition <- rekognition()
+
+# Sending the image as raw bytes
+rekog_resp <- rekognition$detect_text(
+  Image = list(
+    Bytes = image
+  ))
+
+# Parsing the response
+rekog_parsed <- rekog_resp %>%
+  .[["TextDetections"]] %>%
+  keep(~.[["Type"]] == "WORD") %>%
+  map_chr("DetectedText") %>%
+  append(".", after = 4) %>%
+  append(".", after = 11) %>%
+  paste(collapse = " ")
+
+rekog_parsed
+```
+
+```
+## [1] "THAT'S WHAT I DO . I DRINK AND I KNOW THINGS ."
+```
+
+
+## Step 2 - Using Amazon Translate
+
+Now it is time to send the parsed Rekognition response to Amazon Translate. Amazon Translate can translate text between [various languages](https://docs.aws.amazon.com/translate/latest/dg/what-is.html) back and forth. We will translate our English text to Spanish below. 
+
+
+```r
+# Create Translate client
+translate <- translate()
+  
+# Send text to Translate
+translated_text <- translate$translate_text(
+  Text = rekog_parsed,
+  SourceLanguageCode = "en",
+  TargetLanguageCode = "es")
+
+translated_text$TranslatedText
+```
+
+```
+## [1] "ESO ES LO QUE HAGO. BEBO Y SÉ COSAS."
+```
+
+
+## Step 3 - Using Amazon Polly
+
+We are nearly finished. We just need to send the translated Spanish text to Amazon Polly, which transforms text into lifelike speech. Amazon Polly provides a [variety of different voices](https://docs.aws.amazon.com/polly/latest/dg/SupportedLanguage.html) in multiple languages for synthesizing speech from text. We use Lupe here which is a female US Spanish (es-US) voice.
+
+
+```r
+# Create Polly client
+polly <- polly()
+  
+# Send text to Polly and parse response
+polly_resp <- polly$synthesize_speech(
+  OutputFormat = "mp3",
+  Text = translated_text$TranslatedText,
+  TextType = "text",
+  VoiceId = "Lupe")
+```
+
+The MP3 file returned from Polly can be found as a raw vector in `polly_resp[["AudioStream"]]`. We will save the MP3 file to disk:
+
+
+```r
+filename <- "lupe-quoting-tyrion.mp3"
+write_file(polly_resp[["AudioStream"]], filename)
+```
+
+## Step 4 - Listening to Lupe
+
+Last but not least, let us listen to the final result. [Click here](/lupe-quoting-tyrion.mp3) to open the generated MP3 file in your audio player. 
+
+
+## Summary
+
+In this workshop module you learned how to combine various AWS AI Services to extract text from an image, translate the text into a different language and then synthesize the text and return it as an MP3 file. Of course, you can chain the three services much more elegantly together by creating a custom function as a wrapper around the three API calls. We will leave this task as an homework assignment to you :-). 
+
