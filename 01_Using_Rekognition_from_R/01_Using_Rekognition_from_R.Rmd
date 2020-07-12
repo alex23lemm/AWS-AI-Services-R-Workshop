@@ -1,5 +1,5 @@
 ---
-title: "Using Amazon Rekognition from R"
+title: "First workshop module: Using Amazon Rekognition from R"
 output: html_notebook
 ---
 
