@@ -1,0 +1,100 @@
+---
+title: "Fourth workshop module: Using Amazon Rekognition Custom Labels from R"
+output: html_notebook
+---
+
+## Introduction
+
+> **Info**
+> 
+> At the time of writing this article (Nov 2020), Amazon Rekognition Custom Labels is available in 4 regions
+> us-east-1 (N. Virginia), us-east-2 (Ohio), us-west-2 (Oregon), and eu-west-1 (Ireland).
+> Please make sure to update the `AWS_REGION` entry in the `.Renviron` file in case you configured another AWS region. 
+>
+> The service is currently also part of the AWS Free Tier which means you can get started for free:
+> The service-specific Free Tier lasts 3 months and includes 10 free training hours per month and 4 free inference 
+> hours per month.
+
+You can use Rekogntion Custom Labels to train your own ML models that perform image classification (image level predictions) or object detection (object/bounding box level predictions).
+
+The process of using Rekognition Custom Labels to train, evaluate, deploy and use both types of ML models is the same and consists of the following steps:
+
+* Create a S3 Custom Labels default bucket in your region
+* Create your project
+* Upload your dataset to S3
+* Create a Rekognition Custom Labels dataset
+* Train your model
+* Evaluate the training results
+* Deploy your model
+* Make real-time predictions for new data
+
+The following image describes all the steps and their interrelations in detail. You don't need to understand everything now! Just use it as a reference when you like to organize several Rekognition Custom Labels projects later in your AWS account. 
+
+Below we will create an image classification model for image level predictions of Game of Thrones characters. For this, we will follow the steps described above. Some of the steps are not supported by the Rekognition API. For those, we will use the Amazon Rekognition Custom Labels Console.  
+
+
+## Load the necessary libraries 
+
+```{r message=FALSE }
+library(paws)
+library(purrr)
+library(readr)
+library(tibble)
+library(jsonlite)
+```
+
+## Step 1: Create S3 Custom Labels bucket
+
+Creating the S3 Custom Labels bucket is an one-time step per region in which you like to use Amazon Rekognition Custom Labels which you don't need to repeat afterwards. 
+
+In the AWS Console select **Amazon Rekognition** underneath services and then select **Use Custom Labels** in the left sidebar. Click on **Get started** in the middle of the Amazon Rekognition Custom Labels Console and then on **Create S3 bucket** to create your Rekognition Custom Labels default bucket in your region:
+
+![](images/00_create_default_bucket.PNG)
+
+You can safely ignore the prompt in the console to create your first Custom Labels project. We will do this in the next step via the API.
+
+Next, we create an S3 client to retrieve the name of our S3 Rekognition Custom Labels default bucket which we will need later: 
+
+```{r}
+s3 <- s3()
+region <- Sys.getenv("AWS_REGION")
+
+custom_labels_bucket <- s3$list_buckets() %>% 
+  .[["Buckets"]] %>% 
+  map_chr("Name") %>% 
+  keep(function(x) startsWith(x, paste0("custom-labels-console-", region)))
+
+custom_labels_bucket
+```
+
+## Step 2: Create your project
+
+The primary purpose of Rekognition Custom Labels projects is to manage the lifecycle of your ML models. A trained model always belongs to one project. A project just serves as an umbrella under which you train, deploy and manage one or more ML models. 
+
+We will create a Rekognition client and create our first Custom Labels project:
+
+```{r}
+rek <- rekognition()
+
+project_arn <- rek$create_project("got_image_classification")
+```
+
+`create_project()` returns the project's Amazon Resource Name (ARN). We will store it in a separate variable which we will need later when defining the training job for our image classification model. 
+
+
+Alternatively, you can also use the following code snipped to retrieve the entire list of your Rekognition Custom Labels projects and to select the project of your choice:
+
+```{r eval=FALSE}
+rek$describe_projects() %>% 
+  pluck("ProjectDescriptions") %>% 
+  map_chr("ProjectArn")
+```
+
+
+## Step 3: Upload your dataset
+
+
+Now it is time to upload the dataset to our S3 Custom Labels default bucket. But wait!  
+
+We will use the [Game of thrones character classification dataset](https://www.kaggle.com/kushagrakinjawadekar/game-of-thrones-character-classification) from Kaggle. Just press the **Download (115MB)** button on the page to download the dataset. 
+
