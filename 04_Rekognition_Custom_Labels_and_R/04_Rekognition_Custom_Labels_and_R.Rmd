@@ -191,14 +191,20 @@ rek$start_project_version(ProjectVersionArn = model_arn, MinInferenceUnits = 1)
 rek$describe_project_versions(swoosh_project, "swoosh_detection3.2020-11-29T20.53.55") %>% 
   pluck("ProjectVersionDescriptions", 1, "Status")
 ```
+
+
 ## Step 8: Make real-time predictions for new data
 
+
 ```{r}
+file_names <- list.files("./images/inference/")
+path_to_file <- "./images/inference/"
+```
 
-file_names <- list.files("./images/Inf2/")
+### Image 1
 
-file <- paste0("./images/Inf2/", file_names[1])
-
+```{r}
+file <- paste0(path_to_file, file_names[1])
 image <- read_file_raw(file)
 
 resp <- rek$detect_custom_labels(ProjectVersionArn = model_arn,
@@ -218,7 +224,113 @@ tibble(names, confidence)
 
 
 ```{r fig.align="center", out.width = "60%"}
+# Convert raw image into a magick object
+magick_image <- image_read(file)
+image_attr <- image_info(magick_image)
 
+# Extract bounding box information of detected object(s) from the response
+bounding_box <- resp$CustomLabels[[1]]$Geometry$BoundingBox
+
+# Calculate bounding box properties
+width <- bounding_box$Width * image_attr$width 
+height <- bounding_box$Height * image_attr$height
+left <- bounding_box$Left * image_attr$width 
+top <- bounding_box$Top * image_attr$height
+
+# Add bounding box to image
+image <- magick_image %>% 
+  image_draw()
+rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 15)
+dev.off()
+```
+
+Image 2
+
+```{r}
+file <- paste0(path_to_file, file_names[2])
+image <- read_file_raw(file)
+
+resp <- rek$detect_custom_labels(ProjectVersionArn = model_arn,
+                                 Image = list(
+                                   Bytes = image
+                                 )
+)
+
+# Parse the result
+names <- resp$CustomLabels %>% 
+  map_chr("Name")
+confidence <- resp$CustomLabels %>% 
+  map_dbl("Confidence")
+
+tibble(names, confidence)
+```
+
+```{r fig.align="center", out.width = "60%"}
+# Convert raw image into a magick object
+magick_image <- image_read(file)
+image_attr <- image_info(magick_image)
+
+# Extract bounding box information of detected object(s) from the response
+bounding_box <- resp$CustomLabels[[1]]$Geometry$BoundingBox
+
+# Calculate bounding box properties
+width <- bounding_box$Width * image_attr$width 
+height <- bounding_box$Height * image_attr$height
+left <- bounding_box$Left * image_attr$width 
+top <- bounding_box$Top * image_attr$height
+
+# Add bounding box to image
+image <- magick_image %>% 
+  image_draw()
+rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 15)
+dev.off()
+```
+### Image 3
+
+```{r}
+file <- paste0(path_to_file, file_names[3])
+image <- read_file_raw(file)
+
+resp <- rek$detect_custom_labels(ProjectVersionArn = model_arn,
+                                 Image = list(
+                                   Bytes = image
+                                 )
+)
+
+# Parse the result
+names <- resp$CustomLabels %>% 
+  map_chr("Name")
+confidence <- resp$CustomLabels %>% 
+  map_dbl("Confidence")
+
+tibble(names, confidence)
+```
+
+### Image 4
+
+```{r}
+file <- paste0(path_to_file, file_names[4])
+image <- read_file_raw(file)
+
+resp <- rek$detect_custom_labels(ProjectVersionArn = model_arn,
+                                 Image = list(
+                                   Bytes = image
+                                 )
+)
+
+# Parse the result
+names <- resp$CustomLabels %>% 
+  map_chr("Name")
+confidence <- resp$CustomLabels %>% 
+  map_dbl("Confidence")
+
+tibble(names, confidence)
+```
+
+Recommend to use this pure recipe
+
+
+```{r fig.align="center", out.width = "60%"}
 # Convert raw image into a magick object
 magick_image <- image_read(file)
 image_attr <- image_info(magick_image)
@@ -226,7 +338,8 @@ image_attr <- image_info(magick_image)
 # Extract bounding box information of detected object(s) from the response
 bounding_boxes <- resp$CustomLabels
 
-bb <- map(bounding_boxes, function(x) {
+# Calculate bounding box properties
+boxes <- map_dfr(bounding_boxes, function(x) {
   bounding_box <- x[["Geometry"]][["BoundingBox"]]
   width <- bounding_box$Width * image_attr$width 
   height <- bounding_box$Height * image_attr$height
@@ -236,39 +349,59 @@ bb <- map(bounding_boxes, function(x) {
   cords
 })
 
-# Calculate bounding box properties
-
-bb <- bind_rows(bb)
-
-
-# Add bounding box to suspects image / rect can accept vector 
+# Add bounding box(es) to image
 image <- magick_image %>% 
   image_draw()
-rect(bb$left, bb$top, bb$left + bb$width, bb$top + bb$height, border = "red", lty = "dashed", lwd = 15)
+rect(boxes$left, boxes$top, boxes$left + boxes$width, boxes$top + boxes$height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
 
-```{r fig.align="center", out.width = "60%"}
 
+### Image 5
+
+```{r}
+file <- paste0(path_to_file, file_names[5])
+image <- read_file_raw(file)
+
+resp <- rek$detect_custom_labels(ProjectVersionArn = model_arn,
+                                 Image = list(
+                                   Bytes = image
+                                 )
+)
+
+# Parse the result
+names <- resp$CustomLabels %>% 
+  map_chr("Name")
+confidence <- resp$CustomLabels %>% 
+  map_dbl("Confidence")
+
+tibble(names, confidence)
+```
+```{r fig.align="center", out.width = "60%"}
 # Convert raw image into a magick object
 magick_image <- image_read(file)
+image_attr <- image_info(magick_image)
 
 # Extract bounding box information of detected object(s) from the response
-bounding_box_properties <- resp$CustomLabels[[1]]$Geometry$BoundingBox
+bounding_boxes <- resp$CustomLabels
 
 # Calculate bounding box properties
-width <- bounding_box_properties$Width * image_info(magick_image)$width 
-height <- bounding_box_properties$Height * image_info(magick_image)$height
-left <- bounding_box_properties$Left * image_info(magick_image)$width 
-top <- bounding_box_properties$Top * image_info(magick_image)$height
+boxes <- map_dfr(bounding_boxes, function(x) {
+  bounding_box <- x[["Geometry"]][["BoundingBox"]]
+  width <- bounding_box$Width * image_attr$width 
+  height <- bounding_box$Height * image_attr$height
+  left <- bounding_box$Left * image_attr$width 
+  top <- bounding_box$Top * image_attr$height
+  cords <- c(width = width, height = height, left = left, top = top)
+  cords
+})
 
-# Add bounding box to suspects image
+# Add bounding box(es) to image
 image <- magick_image %>% 
   image_draw()
-rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 5)
+rect(boxes$left, boxes$top, boxes$left + boxes$width, boxes$top + boxes$height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
-
 
 ## Step 9: Stop your model
 
@@ -276,13 +409,8 @@ dev.off()
 resp <- rek$stop_project_version(model_arn)
 ```
 
-
-
 ## Summary 
 
-```{r}
-
-```
 
 
 
