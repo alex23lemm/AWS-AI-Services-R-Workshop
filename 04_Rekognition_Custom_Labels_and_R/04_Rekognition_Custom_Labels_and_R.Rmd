@@ -7,18 +7,27 @@ output: html_notebook
 
 > **Info**
 > 
-> At the time of writing this article (Nov 2020), Amazon Rekognition Custom Labels is available in 4 regions
+> At the time of writing this article ( 20Dec20), Amazon Rekognition Custom Labels is available in 4 regions
 > us-east-1 (N. Virginia), us-east-2 (Ohio), us-west-2 (Oregon), and eu-west-1 (Ireland).
 > Please make sure to update the `AWS_REGION` entry in the `.Renviron` file in case you configured another AWS region. 
 >
-> The service is currently also part of the AWS Free Tier which means you can get started for free:
-> The service-specific Free Tier lasts 3 months and includes 10 free training hours per month and 4 free inference 
+> Amazon Rekognition Custom Labels is currently also part of the AWS Free Tier which means you can get started for free:
+> The [service-specific Free Tier](https://aws.amazon.com/rekognition/pricing/) lasts 3 months and includes 10 free training hours per month and 4 free inference 
 > hours per month.
 
-You can use Rekogntion Custom Labels to train your own ML models that perform image classification (image level predictions) or object detection (object/bounding box level predictions).
+You can use Rekogntion Custom Labels to train your own ML models that performs image classification (image level predictions) or object detection (object/bounding box level predictions).
 
-The process of using Rekognition Custom Labels to train, evaluate, deploy and use both types of ML models is the same and consists of the following steps:
+In this workshop module we will train an object detection model to detect the Swoosh, Nike's famous logo that Carolyn Davidson designed in 1971.
 
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/nike_logo.png")
+```
+
+
+The process of using Rekognition Custom Labels to train, evaluate, deploy and use image classification or object detection models is the same and consists of the following steps:
+
+* Step 0: Preprocess your image data
 * Step 1: Create a S3 Custom Labels default bucket in your region
 * Step 2: Create your project
 * Step 3: Upload your dataset to S3
@@ -29,17 +38,44 @@ The process of using Rekognition Custom Labels to train, evaluate, deploy and us
 * Step 8: Make real-time predictions for new data
 * Step 9: Stop your model
 
-The following image describes all the steps and their interrelations in detail. You don't need to understand everything now! Just use it as a reference when you like to organize several Rekognition Custom Labels projects later in your AWS account. 
-
-Below we will create an image classification model for image level predictions of Game of Thrones characters. For this, we will follow the steps described above. Some of the steps are not supported by the Rekognition API. For those, we will use the Amazon Rekognition Custom Labels Console.  
+We will follow the steps described above to build our Swoosh detection model. Not all of the steps are supported by the Rekognition API. For these steps we will switch over to the Amazon Rekognition Custom Labels Console.  
 
 
-## Before we get started ...
+## Step 0: Preprocess your image data
 
-https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/limits.html
+> **Info**
+>
+> The minimum and the maximum image dimension of images used for training jobs and for inference is 
+> 64 pixels x 64 pixels and 4096 pixels x 4096 pixels respectively. Make sure to scale your images 
+> accordingly before you use Amazon Rekognition Custom Labels. 
+>
+> Additional requirements like supported image file formats, maximum image size, maximum number 
+> of labels per image are described [in the official documentation here](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/limits.html).
+
+We already did the heavy-lifting for you and pre-processed the images you will use to train the Swoosh detector using the purrr-EBImage-recipe below. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
+
+```{r eval=FALSE}
+library("EBImage")
+library(purrr)
+
+source_folder <- "./[folder_of_images_to_be_scaled]"
+target_folder <- "./[folder_to_save_scaled_images/]"
+
+walk(file_names, function(x) {
+  img <- readImage(paste0(source_folder, "/", x))
+  img_dim <- dim(img)
+  index <- which.max(img_dim)
+  
+  if(img_dim[index] > 4096) {
+    scale_fct <- 4096 / img_dim[index]
+    img <- resize(img, w = img_dim[1] * scale_fct, h = img_dim[2] * scale_fct)
+  }
+  writeImage(img, paste0(target_folder, "/", x), quality = 95)
+})
+```
 
 
-
+We collected x images containing the Nike Swoosh logo form [pexels.com](https://www.pexels.com/), scaled down the images using the code recipe above and then uploaded the preprocessed dataset to Kaggle which you can download from here. We used x images to train the Swoosh detector and x images as an hold-out test set for making real-time predictions. 
 
 ## Load the necessary libraries 
 
