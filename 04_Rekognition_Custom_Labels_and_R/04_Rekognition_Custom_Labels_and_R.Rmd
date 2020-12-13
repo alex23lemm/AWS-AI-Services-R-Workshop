@@ -29,9 +29,9 @@ The process of using Rekognition Custom Labels to train, evaluate, deploy and us
 
 * Step 0: Collect and preprocess your image data
 * Step 1: Create a S3 Custom Labels default bucket in your region
-* Step 2: Create your project
-* Step 3: Upload your dataset to S3
-* Step 4: Create a Rekognition Custom Labels dataset
+* Step 2: Upload your dataset to S3
+* Step 3: Create a Rekognition Custom Labels dataset
+* Step 4: Create your project
 * Step 5: Train your model
 * Step 6: Evaluate the training results
 * Step 7: Deploy your model
@@ -70,10 +70,10 @@ knitr::include_graphics("./images/swoosh_compilation.png")
 > Additional requirements like supported image file formats, maximum image size, maximum number 
 > of labels per image are described [in the official documentation here](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/limits.html).
 
-As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector. We used the   purrr-EBImage-recipe below to do this. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
+As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector before uploading them to Kaggle. We used the following purrr-EBImage-recipe below to do this. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
 
 ```{r eval=FALSE}
-library("EBImage")
+library(EBImage)
 library(purrr)
 
 source_folder <- "./[folder_of_images_to_be_scaled]"
@@ -95,15 +95,18 @@ walk(file_names, function(x) {
 
 ## Step 1: Create S3 Custom Labels bucket
 
-Creating the S3 Custom Labels bucket is an one-time step per region in which you like to use Amazon Rekognition Custom Labels which you don't need to repeat afterwards. 
+Creating the default S3 Custom Labels bucket is an one-time step per region in which you like to use Amazon Rekognition Custom Labels. You don't need to repeat this step afterwards. 
 
 In the AWS Console select **Amazon Rekognition** underneath services and then select **Use Custom Labels** in the left sidebar. Click on **Get started** in the middle of the Amazon Rekognition Custom Labels Console and then on **Create S3 bucket** to create your Rekognition Custom Labels default bucket in your region:
 
-![](images/00_create_default_bucket.PNG)
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/00_set_up_default_bucket.PNG")
+```
 
-You can safely ignore the prompt in the console to create your first Custom Labels project. We will do this in the next step via the API.
+You can safely ignore the prompt in the console to create your first Custom Labels project. We will do this later via the API.
 
-Next, we create an S3 client to retrieve the name of our S3 Rekognition Custom Labels default bucket you just created which we will need later: 
+Next, we create an S3 client to retrieve the name of our S3 Rekognition Custom Labels default bucket you just created. We will need the S3 bucket name later. 
 
 ```{r}
 s3 <- s3()
@@ -117,23 +120,102 @@ custom_labels_bucket <- s3$list_buckets() %>%
 custom_labels_bucket
 ```
 
-## Step 2: Create your project
+## Step 2: Upload your dataset
 
-The primary purpose of Rekognition Custom Labels projects is to manage the life cycle of your ML models. A trained model always belongs to one project. A project just serves as an umbrella under which you train, deploy and manage one or more ML models. 
+Now, we will create a new folder **/assets** in our S3 Custom Labels default bucket which we will use to store our raw datasets.
+
+```{r}
+s3$put_object(Bucket = custom_labels_bucket, Key = "/assets/", Body = "")
+```
+
+Next, we will switch over to the S3 Console and upload the unzipped folder **swoosh_data** of Swoosh images we downloaded from Kaggle. 
+
+Navigate to the **/assets** folder we just created and click on **Upload**.
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/01_select_upload.png")
+```
 
 
-Within Amazon Rekognition Custom Labels, you use projects to manage the models that you create. A project manages the input images and labels, datasets, model training, model evaluation, and running the model
+Click on **Add folder** and select the **swoosh_data** folder on your file system. 
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/02_select_add_folder.png")
+```
+
+**Important:** Back on the Upload page, make sure to scroll down and click on **Upload**:
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/03_press_upload_button.png")
+```
+
+After the upload is complete, the S3 folder structure should look like this and the **/train** subfolder should contain 70 images. 
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/04_post_S3_upload.png")
+```
+
+
+
+## Step 3: Create a Rekognition Custom Labels dataset
+
+Next, we need to create a Rekognition Custom Labels dataset.  datasets contain the images, assigned labels, and bounding boxes that you use to train and test a custom model. You create and manage datasets by using the Amazon Rekognition Custom Labels console. You can't create a dataset with the Amazon Rekognition Custom Labels API.
+
+We do this to create the manifest file which we need to reference in the next step when starting a training job. 
+The manifest file includes the correct labels of our images. 
+
+A Rekognition Custom Labels dataset is a "virtual" dataset that references a dataset that resides in S3. 
+
+Now we need to register the dataset we uploaded to the S3 Custom Labels bucket in Rekognition Custom Labels. 
+This step is necessary so that we can create a training job in Rekognition Custom Labels that will reference the registered data set. 
+
+This step is not yet supported via the official API and thus nor via paws. 
+
+
+
+### Option 1: 
+
+
+### Option 2: 
+
+Update the manifest file which comes with this workshop module. 
+
+
+
+
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/05_upload_manifest_file.png")
+```
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/06_create_dataset_via_manifest_file.png")
+```
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/console/07_dataset_after_manifest_import.png")
+```
+
+## Step 4: Create your project
+
+The primary purpose of a Rekognition Custom Labels projects is to manage the life cycle of your machine learning models. A trained model always belongs to one project. A project just serves as an umbrella under which you train, deploy and manage one or more ML models. 
 
 We will create a Rekognition client and create our first Custom Labels project:
 
 ```{r}
 rek <- rekognition()
 
-project_arn <- rek$create_project("got_image_classification")
+project_name <- "swoosh_detector"
+project_arn <- rek$create_project(project_name)
 ```
 
-`create_project()` returns the project's Amazon Resource Name (ARN). We will store it in a separate variable which we will need later when defining the training job for our image classification model. 
-
+`create_project()` returns the project's Amazon Resource Name (ARN). We will store it in a separate variable which we will need later when defining the training job for our Swoosh detection model. 
 
 Alternatively, you can also use the following code snipped to retrieve the entire list of your Rekognition Custom Labels projects and select the project of your choice:
 
@@ -143,53 +225,70 @@ rek$describe_projects() %>%
   map_chr("ProjectArn")
 ```
 
+## Step 5: Train your model
 
-## Step 3: Upload your dataset
+You train a model by calling `create_project_version()` which is not the most intuitive function name in this context. To train a model, the following information is needed:
 
+Name – A unique name for the model version. !!!! That is actually the name of the MODEL and not the version!!!!! We will use version_name but be aware that this actually means name of the model in this context. 
 
-Now it is time to upload the image dataset to our S3 Custom Labels default bucket that we will use to train our Game of Thrones image classification model. But wait! We don't have these images yet. 
+Project ARN – The Amazon Resource Name (ARN) of the project that manages the model.
 
-We will use the [Game of thrones character classification dataset](https://www.kaggle.com/kushagrakinjawadekar/game-of-thrones-character-classification) from Kaggle. Just press the **Download (115MB)** button on the page to download the dataset to your machine. Once the download is complete, please unzip *archive.zip*. 
+Training dataset – An SageMaker Ground Truth–formatted manifest file and images that are used to train the model. You can create the dataset in the Amazon Rekognition Custom Labels console. Another option is to provide an external manifest file such as an SageMaker Ground Truth labeling job. The dataset is stored in an Amazon S3 bucket.
 
-Now we will create two new folders in our S3 Custom Labels default bucket. 
+Testing dataset – Test images and labels used to evaluate the model after training. You can use a dataset created in the Amazon Rekognition Custom Labels console (stored in the console's Amazon S3 bucket). Alternatively, you can use an SageMaker Ground Truth format manifest file stored in an external Amazon S3 bucket. You can also split the training dataset to use it as a testing dataset.
+
+Training results location – The Amazon S3 location where the results are placed. You can use the same location as the console Amazon S3 bucket, or you can choose a different location. We recommend choosing a different location because this allows you to set permissions and avoid potential naming conflicts with training output from using the Amazon Rekognition Custom Labels console.
+
+The response from CreateProjectVersion is an ARN that you use to identify the model version in subsequent requests. You can also use the ARN to secure the model version. Training a model version takes a while to complete. The Python and Java examples in this topic use waiters to wait for training to complete. A waiter is a utility method that polls for a particular state to occur. Alternatively, you can get the current status of training by calling DescribeProjectVersions. Training is completed when the Status field value is TRAINING_COMPLETED. After training is completed, you can evaluate model’s quality by reviewing the evaluation results.
 
 ```{r}
-s3$put_object(Bucket = custom_labels_bucket, Key = "/assets/got_characters_kaggle/", Body = "")
+version_name <- paste0(project_name, ".", format(Sys.time(), "%Y-%m-%dT%H.%M.%S"))
+manifest_location <- "datasets/swoosh_dataset/manifests/output/output.manifest"
+output_folder <- paste0("output_folder/", project_name, "/",  version_name)
 
+model_arn <- rek$create_project_version(ProjectArn = project_arn, 
+                                        VersionName = version_name, 
+                                        OutputConfig = list(
+                                          S3Bucket = custom_labels_bucket,
+                                          S3KeyPrefix = output_folder                 
+                                        ),
+                                        TrainingData = list(
+                                          Assets = list(
+                                            list(
+                                              GroundTruthManifest = list(
+                                                S3Object = list(
+                                                  Bucket = custom_labels_bucket,
+                                                  Name = manifest_location
+                                                )
+                                              )
+                                            )
+                                          )
+                                        ),
+                                        TestingData = list(
+                                          AutoCreate = TRUE
+                                        )
+)
 ```
 
-Underneath `/assets` we will organize our raw data sets and the outputs of our training runs
 
-we will store all raw data sets we will use in our Custom Labels projects in separate folders. We will now upload.
+Use the following command to get the current status of the model training. Training is complete when the value of Status is TRAINING_COMPLETED.
 
+Replace project_arn with the ARN of the project you created in Step 2: Create a Project. Replace version_name with the name of the version that you used in Step 4: Train Your Model.
 
+aws rekognition describe-project-versions --project-arn "project_arn"\
+     --version-names "version_name"
 
-
-s3 = boto3.client('s3')
-bucket_name = "aniketbucketpython"
-directory_name = "aniket/bucket/python" #it's name of your folders
-s3.put_object(Bucket=bucket_name, Key=(directory_name+'/'))
-
-
-Next, we navigate to the Amazon S3 Console and create 
-
-
-
-
-## Step 4: Create a Rekognition Custom Labels dataset
-
-Now we need to register the data set we uploaded to the S3 Custom Labels bucket in Rekognition Custom Labels. 
-This step is necessary so that we can create a project/training job in Rekognition Custom Labels that will reference the registered data set. 
-
-We do this to create the manifest file which we need to reference in the next step when starting a training job. 
-The manifest file includes the correct labels of our images. 
-
-
-This step is not yet supported via the official API and thus nor via paws. 
-
-Rek CL datasets cannot be deleted. It seems you need to delete the underlying referenced S3 bucket content to get rid of the dataset in the Rek console. 
-solution: delete datasets/ and index/ folder in the S3 Custom Labels folder which will automatically remove dataset in Rek console. 
-
+```{r}
+training_results <- rek$describe_project_versions(ProjectArn = project_arn,
+                              VersionNames = list(
+                                version_name
+                              )
+)
+training_status <- training_results %>% 
+  pluck("ProjectVersionDescriptions", 1, "Status")
+training_status
+  
+```
 
 ## Step 7: Deploy your model
 
