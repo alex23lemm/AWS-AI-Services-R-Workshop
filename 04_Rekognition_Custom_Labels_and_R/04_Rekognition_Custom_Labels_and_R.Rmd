@@ -27,7 +27,7 @@ knitr::include_graphics("./images/nike_logo.png")
 
 The process of using Rekognition Custom Labels to train, evaluate, deploy and use image classification or object detection models is the same and consists of the following steps:
 
-* Step 0: Preprocess your image data
+* Step 0: collect and preprocess your image data
 * Step 1: Create a S3 Custom Labels default bucket in your region
 * Step 2: Create your project
 * Step 3: Upload your dataset to S3
@@ -41,18 +41,27 @@ The process of using Rekognition Custom Labels to train, evaluate, deploy and us
 We will follow the steps described above to build our Swoosh detection model. Not all of the steps are supported by the Rekognition API. For these steps we will switch over to the Amazon Rekognition Custom Labels Console.  
 
 
-## Step 0: Preprocess your image data
+## Step 0: Collect and preprocess your image data
+
+We collected 75 free and publicly images containing the Nike Swoosh logo form [pexels.com](https://www.pexels.com/), preprocessed/scaled the images and uploaded 70 of the preprocessed images as a dataset to Kaggle that we will use for training the Swoosh detector. The remaining 5 of the pre-processed images come with this repository as a hold-out test set for making real-time predictions. The compilation below shows some of the images we collected:
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/swoosh_compilation.png")
+```
+
+
 
 > **Info**
 >
 > The minimum and the maximum image dimension of images used for training jobs and for inference is 
-> 64 pixels x 64 pixels and 4096 pixels x 4096 pixels respectively. Make sure to scale your images 
+> 64 pixels x 64 pixels and 4096 pixels x 4096 pixels respectively. Make sure to always scale your images 
 > accordingly before you use Amazon Rekognition Custom Labels. 
 >
 > Additional requirements like supported image file formats, maximum image size, maximum number 
 > of labels per image are described [in the official documentation here](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/limits.html).
 
-We already did the heavy-lifting for you and pre-processed the images you will use to train the Swoosh detector using the purrr-EBImage-recipe below. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
+As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector. We used the   purrr-EBImage-recipe below to do this. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
 
 ```{r eval=FALSE}
 library("EBImage")
@@ -74,8 +83,6 @@ walk(file_names, function(x) {
 })
 ```
 
-
-We collected x images containing the Nike Swoosh logo form [pexels.com](https://www.pexels.com/), scaled down the images using the code recipe above and then uploaded the preprocessed dataset to Kaggle which you can download from here. We used x images to train the Swoosh detector and x images as an hold-out test set for making real-time predictions. 
 
 ## Load the necessary libraries 
 
@@ -131,7 +138,7 @@ project_arn <- rek$create_project("got_image_classification")
 `create_project()` returns the project's Amazon Resource Name (ARN). We will store it in a separate variable which we will need later when defining the training job for our image classification model. 
 
 
-Alternatively, you can also use the following code snipped to retrieve the entire list of your Rekognition Custom Labels projects and to select the project of your choice:
+Alternatively, you can also use the following code snipped to retrieve the entire list of your Rekognition Custom Labels projects and select the project of your choice:
 
 ```{r eval=FALSE}
 rek$describe_projects() %>% 
@@ -211,7 +218,7 @@ swoosh_project <- project_arns[grepl("swoosh_detection3", project_arns)]
 
 #rek$describe_project_versions(swoosh_project)
 
-model_arn <- rek$describe_project_versions(swoosch_project) %>% 
+model_arn <- rek$describe_project_versions(swoosh_project) %>% 
   pluck("ProjectVersionDescriptions" , 1, "ProjectVersionArn")
   
 ```
@@ -231,13 +238,23 @@ rek$describe_project_versions(swoosh_project, "swoosh_detection3.2020-11-29T20.5
 
 ## Step 8: Make real-time predictions for new data
 
+Now, we will use the 5 images of the hold-out test set that comes with this repository to test our deployed Swoosh detector model. We will test each of the following images one by one: 
+
+<p align="center">
+```{r echo=FALSE, out.width = "40%"}
+knitr::include_graphics("./images/swoosh_test_set_compilation.png")
+```
+
+As you can see, images 1 and 2 contain a single Swoosh each, image 3 contains no Swoosh at all, and images 5 and 6 include the Swoosh multiple times. 
+
+We will show you various best practices on how to parse the results from the Rekognition Custom Labels API and how to add the received bounding box coordinates to the original image for which we will use the `magick` package.
 
 ```{r}
 file_names <- list.files("./images/inference/")
 path_to_file <- "./images/inference/"
 ```
 
-### Image 1
+### Image 1: A single Swoosh
 
 ```{r}
 file <- paste0(path_to_file, file_names[1])
@@ -280,7 +297,7 @@ rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd 
 dev.off()
 ```
 
-Image 2
+Image 2: Another single Swoosh
 
 ```{r}
 file <- paste0(path_to_file, file_names[2])
@@ -321,7 +338,7 @@ image <- magick_image %>%
 rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
-### Image 3
+### Image 3: No Swoosh
 
 ```{r}
 file <- paste0(path_to_file, file_names[3])
@@ -342,7 +359,7 @@ confidence <- resp$CustomLabels %>%
 tibble(names, confidence)
 ```
 
-### Image 4
+### Image 4: Multiple Swooshes
 
 ```{r}
 file <- paste0(path_to_file, file_names[4])
@@ -364,6 +381,11 @@ tibble(names, confidence)
 ```
 
 Recommend to use this pure recipe
+
+> **Info**
+>
+>
+>
 
 
 ```{r fig.align="center", out.width = "60%"}
@@ -393,7 +415,7 @@ dev.off()
 ```
 
 
-### Image 5
+### Image 5: Even more Swooshes
 
 ```{r}
 file <- paste0(path_to_file, file_names[5])
@@ -438,6 +460,9 @@ image <- magick_image %>%
 rect(boxes$left, boxes$top, boxes$left + boxes$width, boxes$top + boxes$height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
+
+The results above show you that our Swoosh detector model does not yet work perfectly and missed to spot x out of y Swoosh logos in the image. In particular, the model missed to detect the two logos with the overhanging of the price label shoelaces and x Swoosh logos.
+
 
 ## Step 9: Stop your model
 
