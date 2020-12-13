@@ -27,7 +27,7 @@ knitr::include_graphics("./images/nike_logo.png")
 
 The process of using Rekognition Custom Labels to train, evaluate, deploy and use image classification or object detection models is the same and consists of the following steps:
 
-* Step 0: collect and preprocess your image data
+* Step 0: Collect and preprocess your image data
 * Step 1: Create a S3 Custom Labels default bucket in your region
 * Step 2: Create your project
 * Step 3: Upload your dataset to S3
@@ -38,7 +38,18 @@ The process of using Rekognition Custom Labels to train, evaluate, deploy and us
 * Step 8: Make real-time predictions for new data
 * Step 9: Stop your model
 
-We will follow the steps described above to build our Swoosh detection model. Not all of the steps are supported by the Rekognition API. For these steps we will switch over to the Amazon Rekognition Custom Labels Console.  
+We will follow the steps described above to build our Swoosh detection model. Not all of the steps are supported by the Rekognition API. For those steps we will switch over to the Amazon Rekognition Custom Labels Console.  
+
+## Load the necessary libraries 
+
+```{r message=FALSE }
+library(paws)
+library(purrr)
+library(readr)
+library(tibble)
+library(jsonlite)
+library(magick)
+```
 
 
 ## Step 0: Collect and preprocess your image data
@@ -49,8 +60,6 @@ We collected 75 free and publicly images containing the Nike Swoosh logo form [p
 ```{r echo=FALSE, out.width = "40%"}
 knitr::include_graphics("./images/swoosh_compilation.png")
 ```
-
-
 
 > **Info**
 >
@@ -84,18 +93,6 @@ walk(file_names, function(x) {
 ```
 
 
-## Load the necessary libraries 
-
-```{r message=FALSE }
-library(paws)
-library(purrr)
-library(readr)
-library(tibble)
-library(jsonlite)
-library(magick)
-```
-
-
 ## Step 1: Create S3 Custom Labels bucket
 
 Creating the S3 Custom Labels bucket is an one-time step per region in which you like to use Amazon Rekognition Custom Labels which you don't need to repeat afterwards. 
@@ -106,7 +103,7 @@ In the AWS Console select **Amazon Rekognition** underneath services and then se
 
 You can safely ignore the prompt in the console to create your first Custom Labels project. We will do this in the next step via the API.
 
-Next, we create an S3 client to retrieve the name of our S3 Rekognition Custom Labels default bucket which we will need later: 
+Next, we create an S3 client to retrieve the name of our S3 Rekognition Custom Labels default bucket you just created which we will need later: 
 
 ```{r}
 s3 <- s3()
@@ -122,7 +119,7 @@ custom_labels_bucket
 
 ## Step 2: Create your project
 
-The primary purpose of Rekognition Custom Labels projects is to manage the lifecycle of your ML models. A trained model always belongs to one project. A project just serves as an umbrella under which you train, deploy and manage one or more ML models. 
+The primary purpose of Rekognition Custom Labels projects is to manage the life cycle of your ML models. A trained model always belongs to one project. A project just serves as an umbrella under which you train, deploy and manage one or more ML models. 
 
 
 Within Amazon Rekognition Custom Labels, you use projects to manage the models that you create. A project manages the input images and labels, datasets, model training, model evaluation, and running the model
