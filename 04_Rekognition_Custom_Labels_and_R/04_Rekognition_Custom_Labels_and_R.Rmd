@@ -63,14 +63,14 @@ knitr::include_graphics("./images/swoosh_compilation.png")
 
 > **Info**
 >
-> The minimum and the maximum image dimension of images used for training jobs and for inference is 
-> 64 pixels x 64 pixels and 4096 pixels x 4096 pixels respectively. Make sure to always scale your images 
-> accordingly before you use Amazon Rekognition Custom Labels. 
+> The minimum and the maximum image dimension of images used for training jobs and for inference with 
+> Rekognition Custom Labels is 64 pixels x 64 pixels and 4096 pixels x 4096 pixels respectively. 
+> Make sure to always scale your images accordingly before you use Amazon Rekognition Custom Labels. 
 >
 > Additional requirements like supported image file formats, maximum image size, maximum number 
 > of labels per image are described [in the official documentation here](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/limits.html).
 
-As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector before uploading them to Kaggle. We used the following purrr-EBImage-recipe below to do this. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
+As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector before we uploaded them to Kaggle. We used the following purrr-EBImage-recipe below to do this. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
 
 ```{r eval=FALSE}
 library(EBImage)
@@ -182,10 +182,7 @@ This step is not yet supported via the official API and thus nor via paws.
 
 ### Option 2: 
 
-Update the manifest file which comes with this workshop module. 
-
-
-
+Upload the manifest file which comes with this workshop module. 
 
 
 <p align="center">
@@ -229,25 +226,28 @@ rek$describe_projects() %>%
 
 You train a model by calling `create_project_version()` which is not the most intuitive function name in this context. To train a model, the following information is needed:
 
-Name – A unique name for the model version. !!!! That is actually the name of the MODEL and not the version!!!!! We will use version_name but be aware that this actually means name of the model in this context. 
+* **Name**: A unique name for the model. Best practice is to use a **project name - timestamp combination** for the model name. 
 
-Project ARN – The Amazon Resource Name (ARN) of the project that manages the model.
+* **Project ARN**: The Amazon Resource Name (ARN) of the project that will manage the model lifecycle and which we stored in `project_arn`.  
 
-Training dataset – An SageMaker Ground Truth–formatted manifest file and images that are used to train the model. You can create the dataset in the Amazon Rekognition Custom Labels console. Another option is to provide an external manifest file such as an SageMaker Ground Truth labeling job. The dataset is stored in an Amazon S3 bucket.
+* **Training dataset**: A manifest file with the S3 location of the training image dataset and the image labeling information. This is the manifest file that was generated in `datasets/swoosh_dataset/manifests/output/output.manifest` when we created the Rekognition Custom Labels dataset in the previous step 3 above. 
 
-Testing dataset – Test images and labels used to evaluate the model after training. You can use a dataset created in the Amazon Rekognition Custom Labels console (stored in the console's Amazon S3 bucket). Alternatively, you can use an SageMaker Ground Truth format manifest file stored in an external Amazon S3 bucket. You can also split the training dataset to use it as a testing dataset.
+* **Test dataset** (optional): A manifest file of the test set generated like the training set manifest file via the Rekognition Custom Labels Console. If not provided, Rekognition Custom Labels creates a test dataset with a random 80/20 split of the training dataset which is the option we will use here by setting `AutoCreate = TRUE` below.
 
-Training results location – The Amazon S3 location where the results are placed. You can use the same location as the console Amazon S3 bucket, or you can choose a different location. We recommend choosing a different location because this allows you to set permissions and avoid potential naming conflicts with training output from using the Amazon Rekognition Custom Labels console.
+* **Training results location** – The Amazon S3 location where the training results are stored. We will store the results of training jobs in dedicated subfolders `/output_folder/[project name]/[model name]` in our S3 Rekognition Custom Labels default bucket.
 
-The response from CreateProjectVersion is an ARN that you use to identify the model version in subsequent requests. You can also use the ARN to secure the model version. Training a model version takes a while to complete. The Python and Java examples in this topic use waiters to wait for training to complete. A waiter is a utility method that polls for a particular state to occur. Alternatively, you can get the current status of training by calling DescribeProjectVersions. Training is completed when the Status field value is TRAINING_COMPLETED. After training is completed, you can evaluate model’s quality by reviewing the evaluation results.
+> **Info**
+>
+> Before you start the training job by executing the code chunk below, make sure to get a coffee. 
+> The training time for the Swoosh Detector model will be approximately one hour. 
 
 ```{r}
-version_name <- paste0(project_name, ".", format(Sys.time(), "%Y-%m-%dT%H.%M.%S"))
+model_name <- paste0(project_name, ".", format(Sys.time(), "%Y-%m-%dT%H.%M.%S"))
 manifest_location <- "datasets/swoosh_dataset/manifests/output/output.manifest"
-output_folder <- paste0("output_folder/", project_name, "/",  version_name)
+output_folder <- paste0("output_folder/", project_name, "/",  model_name)
 
 model_arn <- rek$create_project_version(ProjectArn = project_arn, 
-                                        VersionName = version_name, 
+                                        VersionName = model_name, 
                                         OutputConfig = list(
                                           S3Bucket = custom_labels_bucket,
                                           S3KeyPrefix = output_folder                 
@@ -271,17 +271,14 @@ model_arn <- rek$create_project_version(ProjectArn = project_arn,
 ```
 
 
-Use the following command to get the current status of the model training. Training is complete when the value of Status is TRAINING_COMPLETED.
+The response from `create_project_version()` is the ARN of the trained Swoosh detector model. You will use the model ARN in subsequent API requests when deploying the trained model, making real-time predictions, and stopping the running model. 
 
-Replace project_arn with the ARN of the project you created in Step 2: Create a Project. Replace version_name with the name of the version that you used in Step 4: Train Your Model.
-
-aws rekognition describe-project-versions --project-arn "project_arn"\
-     --version-names "version_name"
+Use the following command to get the current status of the training job. Training is complete when the value of Status is `TRAINING_COMPLETED`.
 
 ```{r}
 training_results <- rek$describe_project_versions(ProjectArn = project_arn,
                               VersionNames = list(
-                                version_name
+                                model_name
                               )
 )
 training_status <- training_results %>% 
@@ -290,7 +287,17 @@ training_status
   
 ```
 
+
+## Step 6: Evaluate the training results
+
+
+
+
+
+
 ## Step 7: Deploy your model
+
+
 
 ```{r}
 
@@ -303,33 +310,12 @@ rek$start_project_version(ProjectVersionArn = model_arn,
 
 ```
 
-### dec12
-
 ```{r}
-project_arns <- rek$describe_projects() %>% 
-  pluck("ProjectDescriptions") %>% 
-  map_chr("ProjectArn") 
-
-swoosh_project <- project_arns[grepl("swoosh_detection3", project_arns)]
-
-#rek$describe_project_versions(swoosh_project)
-
-model_arn <- rek$describe_project_versions(swoosh_project) %>% 
-  pluck("ProjectVersionDescriptions" , 1, "ProjectVersionArn")
-  
-```
-
-```{r}
-rek$start_project_version(ProjectVersionArn = model_arn, MinInferenceUnits = 1)
-```
-
-```{r}
-#rek$describe_project_versions(project_arn, version_name) %>% 
-#  pluck("ProjectVersionDescriptions", 1, "Status")
-
-rek$describe_project_versions(swoosh_project, "swoosh_detection3.2020-11-29T20.53.55") %>% 
+rek$describe_project_versions(project_arn, model_name) %>% 
   pluck("ProjectVersionDescriptions", 1, "Status")
 ```
+
+
 
 
 ## Step 8: Make real-time predictions for new data
