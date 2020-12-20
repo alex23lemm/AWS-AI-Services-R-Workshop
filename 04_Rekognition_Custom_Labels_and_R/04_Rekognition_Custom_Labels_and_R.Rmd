@@ -542,8 +542,17 @@ The results above show you that our Swoosh detector model does not yet work perf
 
 ## Step 9: Stop your model
 
+After we used the hold-out test set for making real-time predictions, we will now stop our deployed model by calling `stop_project_version()`:
+
 ```{r}
-resp <- rek$stop_project_version(model_arn)
+rek$stop_project_version(model_arn)
+```
+
+The model stopped running when the returned status is `STOPPED`.
+
+```{r}
+rek$describe_project_versions(project_arn, model_name) %>% 
+  pluck("ProjectVersionDescriptions", 1, "Status")
 ```
 
 ## Summary 
