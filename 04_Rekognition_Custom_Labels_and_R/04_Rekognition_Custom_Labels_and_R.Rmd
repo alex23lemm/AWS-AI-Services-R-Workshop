@@ -1,21 +1,12 @@
 ---
-title: "Fourth workshop module: Using Amazon Rekognition Custom Labels from R"
-output: html_notebook
+title: "Fourth module: Using Amazon Rekognition Custom Labels from R"
+output: html_document:
+    keep_md: yes
 ---
 
 ## Introduction
 
-> **Info**
-> 
-> At the time of writing this article ( 20Dec20), Amazon Rekognition Custom Labels is available in 4 regions
-> us-east-1 (N. Virginia), us-east-2 (Ohio), us-west-2 (Oregon), and eu-west-1 (Ireland).
-> Please make sure to update the `AWS_REGION` entry in the `.Renviron` file in case you configured another AWS region. 
->
-> Amazon Rekognition Custom Labels is currently also part of the AWS Free Tier which means you can get started for free:
-> The [service-specific Free Tier](https://aws.amazon.com/rekognition/pricing/) lasts 3 months and includes 10 free training hours per month and 4 free inference 
-> hours per month.
-
-You can use Rekogntion Custom Labels to train your own ML models that performs image classification (image level predictions) or object detection (object/bounding box level predictions).
+You can use Rekognition Custom Labels to train your own ML models that perform image classification (image level predictions) or object detection (object/bounding box level predictions).
 
 In this workshop module we will train an object detection model to detect the Swoosh, Nike's famous logo that Carolyn Davidson designed in 1971.
 
@@ -23,7 +14,7 @@ In this workshop module we will train an object detection model to detect the Sw
 ```{r echo=FALSE, out.width = "40%"}
 knitr::include_graphics("./images/nike_logo.png")
 ```
-
+</p>
 
 The process of using Rekognition Custom Labels to train, evaluate, deploy and use image classification or object detection models is the same and consists of the following steps:
 
@@ -40,6 +31,17 @@ The process of using Rekognition Custom Labels to train, evaluate, deploy and us
 
 We will follow the steps described above to build our Swoosh detection model. Not all of the steps are supported by the Rekognition API. For those steps we will switch over to the Amazon Rekognition Custom Labels Console.  
 
+> **Info**
+> 
+> At the time of writing this article (Dec2020), Amazon Rekognition Custom Labels is available in 4 regions: 
+> us-east-1 (N. Virginia), us-east-2 (Ohio), us-west-2 (Oregon), and eu-west-1 (Ireland).
+> Please make sure to update the `AWS_REGION` entry in the `.Renviron` file in case you configured another AWS region. 
+>
+> Amazon Rekognition Custom Labels is currently also part of the AWS Free Tier which means you can get started for free:
+> The [service-specific Free Tier](https://aws.amazon.com/rekognition/pricing/) lasts 3 months and includes 10 free 
+> training hours per month and 4 free inference hours per month.
+
+
 ## Load the necessary libraries 
 
 ```{r message=FALSE }
@@ -47,7 +49,7 @@ library(paws)
 library(purrr)
 library(readr)
 library(tibble)
-library(jsonlite)
+#library(jsonlite)
 library(magick)
 ```
 
@@ -57,9 +59,10 @@ library(magick)
 We collected 75 free and publicly images containing the Nike Swoosh logo form [pexels.com](https://www.pexels.com/), preprocessed/scaled the images and uploaded 70 of the preprocessed images as a dataset to Kaggle that we will use for training the Swoosh detector. The remaining 5 of the pre-processed images come with this repository as a hold-out test set for making real-time predictions. The compilation below shows some of the images we collected:
 
 <p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "70%"}
 knitr::include_graphics("./images/swoosh_compilation.png")
 ```
+</p>
 
 > **Info**
 >
@@ -70,7 +73,7 @@ knitr::include_graphics("./images/swoosh_compilation.png")
 > Additional requirements like supported image file formats, maximum image size, maximum number 
 > of labels per image are described [in the official documentation here](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/limits.html).
 
-As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector before we uploaded them to Kaggle. We used the following purrr-EBImage-recipe below to do this. You can use the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold. 
+As described above, we already did the heavy-lifting for you and pre-processed the images you will use to train and test the Swoosh detector before we uploaded them to Kaggle. We used the purrr-EBImage-recipe below to do this. You can save the recipe in your future projects if you need to scale down your images below the 4096 pixels threshold.
 
 ```{r eval=FALSE}
 library(EBImage)
@@ -99,8 +102,7 @@ Creating the default S3 Custom Labels bucket is an one-time step per region in w
 
 In the AWS Console select **Amazon Rekognition** underneath services and then select **Use Custom Labels** in the left sidebar. Click on **Get started** in the middle of the Amazon Rekognition Custom Labels Console and then on **Create S3 bucket** to create your Rekognition Custom Labels default bucket in your region:
 
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "70%"}
 knitr::include_graphics("./images/console/00_set_up_default_bucket.PNG")
 ```
 
@@ -130,35 +132,29 @@ s3$put_object(Bucket = custom_labels_bucket, Key = "/assets/", Body = "")
 
 Next, we will switch over to the S3 Console and upload the unzipped folder **swoosh_data** of Swoosh images we downloaded from Kaggle. 
 
-Navigate to the **/assets** folder we just created and click on **Upload**.
+Navigate to the **/assets** folder we just created and click on **Upload**:
 
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "55%"}
 knitr::include_graphics("./images/console/01_select_upload.png")
 ```
 
+Click on **Add folder** and select the **swoosh_data** folder on your file system:
 
-Click on **Add folder** and select the **swoosh_data** folder on your file system. 
-
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "70%"}
 knitr::include_graphics("./images/console/02_select_add_folder.png")
 ```
 
 **Important:** Back on the Upload page, make sure to scroll down and click on **Upload**:
 
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "70%"}
 knitr::include_graphics("./images/console/03_press_upload_button.png")
 ```
 
-After the upload is complete, the S3 folder structure should look like this and the **/train** subfolder should contain 70 images. 
+After the upload is complete, the S3 folder structure should look like this and the **/train** subfolder should contain 70 objects images:
 
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "85%"}
 knitr::include_graphics("./images/console/04_post_S3_upload.png")
 ```
-
 
 
 ## Step 3: Create a Rekognition Custom Labels dataset
@@ -184,20 +180,17 @@ This step is not yet supported via the official API and thus nor via paws.
 
 Upload the manifest file which comes with this workshop module. 
 
-
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "50%"}
 knitr::include_graphics("./images/console/05_upload_manifest_file.png")
 ```
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+
+```{r echo=FALSE, out.width = "80%"}
 knitr::include_graphics("./images/console/06_create_dataset_via_manifest_file.png")
 ```
-
-<p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "85%"}
 knitr::include_graphics("./images/console/07_dataset_after_manifest_import.png")
 ```
+
 
 ## Step 4: Create your project
 
@@ -314,23 +307,34 @@ rek$describe_project_versions(project_arn, model_name) %>%
 
 ## Step 8: Make real-time predictions for new data
 
-Now, we will use the 5 images of the hold-out test set that comes with this repository to test our deployed Swoosh detector model. We will test each of the following images one by one: 
+We will use the 5 images of the hold-out test set that comes with this repository to test our deployed Swoosh detector model. We will test each of the following images one by one: 
 
 <p align="center">
-```{r echo=FALSE, out.width = "40%"}
+```{r echo=FALSE, out.width = "70%"}
 knitr::include_graphics("./images/swoosh_test_set_compilation.png")
 ```
+</p>
 
 As you can see, images 1 and 2 contain a single Swoosh each, image 3 contains no Swoosh at all, and images 5 and 6 include the Swoosh multiple times. 
 
-We will show you various best practices on how to parse the results from the Rekognition Custom Labels API and how to add the received bounding box coordinates to the original image for which we will use the `magick` package.
+We will show you various best practices on how to parse the results from the Rekognition Custom Labels API and how to add the received bounding box coordinates to the original image using the `magick` package.
 
 ```{r}
 file_names <- list.files("./images/inference/")
 path_to_file <- "./images/inference/"
 ```
 
+> **Info**
+>
+> Your prediction results might differ slightly from the  results below because the Swoosh 
+> object detection model was trained based on a radom split of the training data set. 
+
+
 ### Image 1: A single Swoosh
+
+We will read the first image into a raw vector and then send it to the model endpoint for prediction. Afterwards, we will parse the result into a `tibble` that will include one row per detected label with the respective label name and the confidence score.
+
+Unlike described in [the official Rekognition Custom Labels documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rekognition.html#Rekognition.Client.detect_custom_labels), it is NOT necessary to pass the image as base64-encoded image bytes to `detect_custom_labels()`.
 
 ```{r}
 file <- paste0(path_to_file, file_names[1])
@@ -350,14 +354,16 @@ confidence <- resp$CustomLabels %>%
 
 tibble(names, confidence)
 ```
+In total, the model detected one Swoosh in the image with a high confidence. 
 
+Let us extract the bounding box coordinates from the response and add the bounding box to the original picture. 
 
 ```{r fig.align="center", out.width = "60%"}
 # Convert raw image into a magick object
 magick_image <- image_read(file)
 image_attr <- image_info(magick_image)
 
-# Extract bounding box information of detected object(s) from the response
+# Extract bounding box information of the detected object from the response
 bounding_box <- resp$CustomLabels[[1]]$Geometry$BoundingBox
 
 # Calculate bounding box properties
@@ -367,13 +373,16 @@ left <- bounding_box$Left * image_attr$width
 top <- bounding_box$Top * image_attr$height
 
 # Add bounding box to image
-image <- magick_image %>% 
-  image_draw()
+image <- image_draw(magick_image)
 rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
-```
 
-Image 2: Another single Swoosh
+print(image)
+```
+Great! We see that our model detected the Swoosh in the image correctly. 
+
+
+### Image 2: Another single Swoosh
 
 ```{r}
 file <- paste0(path_to_file, file_names[2])
@@ -393,13 +402,14 @@ confidence <- resp$CustomLabels %>%
 
 tibble(names, confidence)
 ```
+In total, the model detected one Swoosh in the second image. Let us add the bounding box to the image. 
 
 ```{r fig.align="center", out.width = "60%"}
 # Convert raw image into a magick object
 magick_image <- image_read(file)
 image_attr <- image_info(magick_image)
 
-# Extract bounding box information of detected object(s) from the response
+# Extract bounding box information of the detected object from the response
 bounding_box <- resp$CustomLabels[[1]]$Geometry$BoundingBox
 
 # Calculate bounding box properties
@@ -414,7 +424,14 @@ image <- magick_image %>%
 rect(left, top, left + width, top + height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
+
+The model also detected this Swoosh correctly. 
+
+
 ### Image 3: No Swoosh
+
+When Rekognition Custom Labels does not find a matching label in the image, it returns an empty response. The third image does not contain any Swoosh so the expected prediction result is an empty response. 
+
 
 ```{r}
 file <- paste0(path_to_file, file_names[3])
@@ -434,8 +451,12 @@ confidence <- resp$CustomLabels %>%
 
 tibble(names, confidence)
 ```
+The result shows that the model also got this prediction correctly. 
+
 
 ### Image 4: Multiple Swooshes
+
+Our fourth image of the hold-out test set includes 4 Swooshes.
 
 ```{r}
 file <- paste0(path_to_file, file_names[4])
@@ -456,12 +477,14 @@ confidence <- resp$CustomLabels %>%
 tibble(names, confidence)
 ```
 
-Recommend to use this pure recipe
+The parsed response shows that 4 Swooshes were detected in the image with a high confidence score.
+We will now add the correspondent bounding boxes to the original image. 
 
 > **Info**
->
->
->
+> 
+> The `purrr`-`magick` recipe below allows you to extract the coordindates of ALL bounding boxes
+> included in a Rekognition Custom Labels prediction response and add them to the original 
+> image. You can also use it for parsing results with a single label match. 
 
 
 ```{r fig.align="center", out.width = "60%"}
@@ -469,7 +492,7 @@ Recommend to use this pure recipe
 magick_image <- image_read(file)
 image_attr <- image_info(magick_image)
 
-# Extract bounding box information of detected object(s) from the response
+# Extract bounding box information of detected objects from the response
 bounding_boxes <- resp$CustomLabels
 
 # Calculate bounding box properties
@@ -483,18 +506,21 @@ boxes <- map_dfr(bounding_boxes, function(x) {
   cords
 })
 
-# Add bounding box(es) to image
+# Add bounding boxes to image
 image <- magick_image %>% 
   image_draw()
 rect(boxes$left, boxes$top, boxes$left + boxes$width, boxes$top + boxes$height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
+The model  detected all Swooshes in the image correctly. 
 
 
 ### Image 5: Even more Swooshes
 
+Our final image from the hold-out test set contains 9 Swooshes in total. Let us see if our model will be able to detect all. 
+
 ```{r}
-file <- paste0(path_to_file, file_names[5])
+file <- paste0(path_to_file, file_names[5], eval=FALSE)
 image <- read_file_raw(file)
 
 resp <- rek$detect_custom_labels(ProjectVersionArn = model_arn,
@@ -511,12 +537,16 @@ confidence <- resp$CustomLabels %>%
 
 tibble(names, confidence)
 ```
+
+Surprisingly, the model response shows 10 detected Swooshes. Let us add the bounding boxes. 
+
+
 ```{r fig.align="center", out.width = "60%"}
 # Convert raw image into a magick object
 magick_image <- image_read(file)
 image_attr <- image_info(magick_image)
 
-# Extract bounding box information of detected object(s) from the response
+# Extract bounding box information of detected objects from the response
 bounding_boxes <- resp$CustomLabels
 
 # Calculate bounding box properties
@@ -530,14 +560,14 @@ boxes <- map_dfr(bounding_boxes, function(x) {
   cords
 })
 
-# Add bounding box(es) to image
+# Add bounding boxes to image
 image <- magick_image %>% 
   image_draw()
 rect(boxes$left, boxes$top, boxes$left + boxes$width, boxes$top + boxes$height, border = "red", lty = "dashed", lwd = 15)
 dev.off()
 ```
 
-The results above show you that our Swoosh detector model does not yet work perfectly and missed to spot x out of y Swoosh logos in the image. In particular, the model missed to detect the two logos with the overhanging of the price label shoelaces and x Swoosh logos.
+The visualized bounding boxes above in the image show the reason why the model detected 10 Swooshes in an image with only 9 Swooshes: One of the Swooshes was detected and counted twice by the model.
 
 
 ## Step 9: Stop your model
