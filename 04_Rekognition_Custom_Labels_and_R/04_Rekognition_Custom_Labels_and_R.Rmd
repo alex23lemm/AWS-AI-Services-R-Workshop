@@ -273,7 +273,7 @@ model_arn <- rek$create_project_version(ProjectArn = project_arn,
 
 The response from `create_project_version()` is the ARN of the trained Swoosh detector model. You will use the model ARN in subsequent API requests when deploying the trained model, making real-time predictions, and stopping the running model. 
 
-Use the following command to get the current status of the training job. Training is complete when the value of Status is `TRAINING_COMPLETED`.
+Use the following command to get the current status of the training job. Training is complete when the status is `TRAINING_COMPLETED`.
 
 ```{r}
 training_results <- rek$describe_project_versions(ProjectArn = project_arn,
@@ -297,25 +297,19 @@ training_status
 
 ## Step 7: Deploy your model
 
-
+Now, it is time to deploy our Swoosh detection model by calling `start_project_version()` on the Rekognition object. We will go with the minimum number of inference units. The number of inference units decide the maximum number of transactions per second (TPS) a model endpoint can support for real-time predictions. 
 
 ```{r}
-
-model_arn <- training_results %>% 
-  pluck("ProjectVersionDescriptions", 1, "ProjectVersionArn")
-
-
 rek$start_project_version(ProjectVersionArn = model_arn, 
                           MinInferenceUnits = 1 )
-
 ```
+
+Use the following command to get the current deployment status. Model deployment is complete when the status is `RUNNING`.
 
 ```{r}
 rek$describe_project_versions(project_arn, model_name) %>% 
   pluck("ProjectVersionDescriptions", 1, "Status")
 ```
-
-
 
 
 ## Step 8: Make real-time predictions for new data
