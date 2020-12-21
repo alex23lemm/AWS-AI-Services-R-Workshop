@@ -5,7 +5,7 @@
 
 ---
 
-**AWS AI Services for R users** is a fun and short-lived workshop for experienced R users with no prior knowledge of AWS's AI Services, who want to add Deep Learning capabilities like image recognition, text translation or text-to-speech conversion to their R and Shiny applications. 
+**AWS AI Services for R users** is a fun and short-lived workshop for experienced R users with no prior knowledge of AWS's AI Services, who want to add Deep Learning capabilities like image recognition, object detection, text translation or text-to-speech conversion to their R and Shiny applications. 
 
 In all the examples we will utilize the fabulous [paws package](https://github.com/paws-r/paws), an AWS SDK for R, created by [David Kretch](https://github.com/davidkretch) and [Adam Banker](https://github.com/adambanker). `paws` provides access to the full suite of AWS services from within R similar to what `boto3`, an AWS SDK for Python, does for Python users. 
 
@@ -18,6 +18,8 @@ Each workshop module consists of an R Notebook (.Rmd file) so that users can run
 2. [Combining several AWS AI Services](/02_Chaining_AI_Services_with_R/02_Chaining_AI_Services_with_R.md): In the second module you will chain several AI Services together. You'll start by using Rekognition to extract text from an image. You will pass the text to Amazon Translate to translate it into a language of your choice. After that you will use Amazon Polly to generate an MP3 file of the translated text.
 
 3. [Shiny and AWS AI Services](/03_GoT_Shiny_app/Instructions.md): You will learn how quickly and easily you can add sophisticated deep learning capabilities to your Shiny applications. We will deploy a Shiny application to shinyapps.io which makes calls to several AWS AI services. The Shiny application leverages the AWS API calls you already created and used in the second workshop module. 
+
+4. [Amazon Rekogniton Custom Labels in R](/04_Rekognition_Custom_Labels_and_R): You will train an object detection model using Rekognition Customer Labels to detect the Swoosh, Nike's famous logo that Carolyn Davidson designed in 1971. The workshop module comes with a preprocessed and labeled dataset.
 
 ## Prerequisites 
 
