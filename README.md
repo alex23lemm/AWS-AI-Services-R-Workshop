@@ -19,7 +19,7 @@ Each workshop module consists of an R Notebook (.Rmd file) so that users can run
 
 3. [Shiny and AWS AI Services](/03_GoT_Shiny_app/Instructions.md): You will learn how quickly and easily you can add sophisticated deep learning capabilities to your Shiny applications. We will deploy a Shiny application to shinyapps.io which makes calls to several AWS AI services. The Shiny application leverages the AWS API calls you already created and used in the second workshop module. 
 
-4. [Amazon Rekogniton Custom Labels in R](/04_Rekognition_Custom_Labels_and_R.md): You will train an object detection model using Rekognition Customer Labels to detect the Swoosh, Nike's famous logo that Carolyn Davidson designed in 1971. The workshop module comes with a preprocessed and labeled dataset.
+4. [Amazon Rekogniton Custom Labels in R](/04_Rekognition_Custom_Labels_and_R/04_Rekognition_Custom_Labels_and_R.md): You will train an object detection model using Rekognition Customer Labels to detect the Swoosh, Nike's famous logo that Carolyn Davidson designed in 1971. The workshop module comes with a preprocessed and labeled dataset.
 
 ## Prerequisites 
 
