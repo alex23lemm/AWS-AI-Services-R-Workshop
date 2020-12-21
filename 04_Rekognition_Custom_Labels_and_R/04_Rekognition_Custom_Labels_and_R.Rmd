@@ -117,7 +117,7 @@ Creating the default S3 Rekognition Custom Labels bucket is an one-time step per
 In the AWS console select **Amazon Rekognition** underneath services and then select **Use Custom Labels** in the left sidebar. Click on **Get started** in the middle of the Amazon Rekognition Custom Labels console and then on **Create S3 bucket** to create your Rekognition Custom Labels default bucket in your region:
 
 ```{r echo=FALSE, out.width = "70%"}
-knitr::include_graphics("./images/console/00_set_up_default_bucket.PNG")
+knitr::include_graphics("./images/console/00_set_up_default_bucket.png")
 ```
 
 You can safely ignore the prompt in the console to create your first Custom Labels project. We will do this later via the API.
