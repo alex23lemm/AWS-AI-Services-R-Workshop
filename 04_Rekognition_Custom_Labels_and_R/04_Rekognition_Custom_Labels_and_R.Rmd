@@ -55,13 +55,6 @@ library(tibble)
 library(magick)
 ```
 
-```{r setup, include=FALSE, eval=TRUE}
-model_name <- "swoosh_detector.2020-12-13T22.50.45"
-model_arn <- "arn:aws:rekognition:us-east-1:198562456021:project/swoosh_detector/version/swoosh_detector.2020-12-13T22.50.45/1607896245723"
-project_name <- "swoosh_detector"
-project_arn <- "arn:aws:rekognition:us-east-1:198562456021:project/swoosh_detector/1607893772481"
-rek <- rekognition()
-```
 
 ## Step 0: Collect and preprocess your image data
 
@@ -219,7 +212,7 @@ knitr::include_graphics("./images/console/07_dataset_after_manifest_import.png")
 **Important**: Using an existing manifest file to create a Custom Labels dataset will also create a NEW manifest file **output.manifest** in your Custom Labels S3 default bucket underneath `/datasets/[DATASET_NAME]/manifests/output`. This new manifest file will be the one that we'll pass as a parameter when starting the training job later. 
 
 ```{r echo=FALSE, out.width = "60%"}
-knitr::include_graphics("./images/console/08_swoosh_dataset_manifest_file.PNG")
+knitr::include_graphics("./images/console/08_swoosh_dataset_manifest_file.png")
 ```
 
 
@@ -311,11 +304,34 @@ training_status
   
 ```
 
+
 ## Step 6: Evaluate the training results
 
+```{r}
+eval_results <- training_results$ProjectVersionDescriptions[[1]] %>% 
+  pluck ("EvaluationResult")
+eval_results
+```
 
+```{r}
+eval_summary <- s3$get_object(Bucket = custom_labels_bucket,
+                              Key = eval_results$Summary$S3Object$Name,
+                              ResponseContentType = "json") %>% 
+  .$Body %>% 
+  rawToChar() %>% 
+  fromJSON()
+```
 
+```{r}
+eval_summary$EvaluationDetails$NumberOfTrainingImages
+eval_summary$EvaluationDetails$NumberOfTestingImages
+```
 
+```{r}
+eval_summary %>% 
+  pluck("LabelEvaluationResults", "Metrics") %>% 
+  pivot_longer(cols = everything())
+```
 
 
 ## Step 7: Deploy your model
