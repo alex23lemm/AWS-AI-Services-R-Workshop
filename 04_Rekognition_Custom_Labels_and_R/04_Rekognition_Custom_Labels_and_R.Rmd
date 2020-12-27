@@ -51,7 +51,10 @@ library(paws)
 library(purrr)
 library(readr)
 library(tibble)
-#library(jsonlite)
+library(jsonlite)
+library(stringi)
+library(tidyr)
+library(dplyr)
 library(magick)
 ```
 
@@ -126,6 +129,7 @@ custom_labels_bucket <- s3$list_buckets() %>%
   map_chr("Name") %>% 
   keep(function(x) startsWith(x, paste0("custom-labels-console-", region)))
 ```
+
 
 ## Step 2: Upload your dataset
 
@@ -307,11 +311,16 @@ training_status
 
 ## Step 6: Evaluate the training results
 
+Once the training job successfully completed, we can take a look at the model performance metrics. Amazon Rekognition Custom Labels provides various model performance metrics for (1) the entire test set and (2) for each image in your test set. 
+
+Via the API we can quickly have a look at the F1 score:  
+
 ```{r}
 eval_results <- training_results$ProjectVersionDescriptions[[1]] %>% 
   pluck ("EvaluationResult")
 eval_results
 ```
+The F1 score is 0.646 for our Swoosh detector model. All other model performance metrics are only accessible via the Console or via downloading the evaluation results summary file which we will do below: 
 
 ```{r}
 eval_summary <- s3$get_object(Bucket = custom_labels_bucket,
@@ -322,16 +331,112 @@ eval_summary <- s3$get_object(Bucket = custom_labels_bucket,
   fromJSON()
 ```
 
+Now, let us have a look at the other metrics:
+
 ```{r}
 eval_summary$EvaluationDetails$NumberOfTrainingImages
 eval_summary$EvaluationDetails$NumberOfTestingImages
 ```
+We see that 56 images went into the training set and 14 images into the test set. This matches the 80/20 split of our data set of 70 images when we set `AutoCreate = TRUE` during the training job specification above. 
+
+The parsed evaluation summary results also include various other model performance metrics besides just the F1 score:
 
 ```{r}
 eval_summary %>% 
   pluck("LabelEvaluationResults", "Metrics") %>% 
+  mutate(
+    AverageRecall = eval_summary$AggregatedEvaluationResults$AverageRecall,
+    AveragePrecision = eval_summary$AggregatedEvaluationResults$AveragePrecision
+  ) %>% 
+  relocate(AverageRecall, AveragePrecision, Recall, Precision, F1Score, Threshold) %>% 
   pivot_longer(cols = everything())
 ```
+
+According to the [official documentation](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/tr-metrics-use.html) all model performance metrics are calculated in the usual manner. The `Threshold` above is the value with which a prediction is counted as a true or false positive and is set based on the test set. 
+
+Each image of the test set had one or more ground truth bounding boxes. The Swoosh object detector as an object detection model predicts bounding boxes in an image. Each predicted bounding box is associated with a confidence score. There are three types of bounding box predictions:
+
+* **True Positives (TP)**:
+* **False Negatives (FN)**:
+* **False Positives (FP)**:
+
+
+We will have a look at the individual bounding box predictions in each image of the test set. For this, we will download and parse another JSON file that includes the details for each predicted bounding box:
+
+
+```{r}
+test_set_results_file <- training_results$ProjectVersionDescriptions[[1]] %>% 
+  pluck("TestingDataResult", "Output", "Assets", 1, "GroundTruthManifest", "S3Object", "Name")
+
+test_set_results <- s3$get_object(Bucket = custom_labels_bucket,
+                                       Key = test_set_results_file,
+                                       ResponseContentType = "json") %>% 
+  .$Body %>% 
+  rawToChar() %>%
+  # The next three lines transform ndjson formatted response into json
+  stringi::stri_replace_last_fixed(., "\n", "") %>% 
+  gsub('\n', ',', ., fixed=TRUE) %>% 
+  paste0('[', ., ']') %>% 
+  fromJSON()
+```
+
+```{r}
+object_IDs <- test_set_results$`rekognition-custom-labels-object-id`
+file_names <- sub(".*[/@]", "", test_set_results$`source-ref`)
+object_list <- test_set_results$`rekognition-custom-labels-evaluation-metadata`$objects
+l <- list(.x = object_IDs, .y = object_list, .z = file_names)
+
+eval_test_set_df <- pmap_dfr(l, function(.x, .y, .z) {
+       df <- .y$`rekognition-custom-labels-evaluation-details` %>% 
+         select(starts_with("is-")) %>% 
+         mutate(
+           file_name = .z, 
+           object_id = .x,
+           box_id = seq.int(0, nrow(.y)- 1)
+         ) %>% 
+         relocate(file_name, object_id, box_id)
+       df
+     })
+
+eval_test_set_df$confidence_score <- map(test_set_results$`rekognition-custom-labels-evaluation-metadata`$objects, 
+                                "confidence") %>% flatten_dbl()
+```
+
+```{r}
+eval_test_set_df
+```
+
+
+
+```{r}
+eval_test_set_df %>% 
+  filter(object_id == 10)
+```
+
+
+```{r echo=FALSE, out.width = "85%"}
+knitr::include_graphics("./images/console/10_evaluate_test_set_image.png")
+```
+
+
+```{r}
+test_set_summary <- eval_test_set_df %>% 
+  select(starts_with("is-"))  %>% 
+  summarise(across(where(is.logical), sum))
+
+test_set_summary
+```
+
+```{r}
+recall <- test_set_summary$`is-true-positive` / (test_set_summary$`is-true-positive` + test_set_summary$`is-false-negative`)
+precision <- test_set_summary$`is-true-positive` / (test_set_summary$`is-false-positive` + test_set_summary$`is-true-positive`)
+f1_score <- (recall * precision / (recall + precision)) * 2
+
+recall
+precision
+f1_score
+```
+
 
 
 ## Step 7: Deploy your model
