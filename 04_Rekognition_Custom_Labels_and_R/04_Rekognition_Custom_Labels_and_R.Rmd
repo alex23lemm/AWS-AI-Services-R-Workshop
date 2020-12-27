@@ -46,7 +46,7 @@ We will follow the steps described above to build our Swoosh detection model. No
 
 ## Load the necessary libraries 
 
-```{r message=FALSE }
+```{r message=FALSE}
 library(paws)
 library(purrr)
 library(readr)
@@ -181,7 +181,7 @@ On your machine:
 
 * Open the manifest file **output.manifest** in **./04_Rekognition_Custom_Labels_and_R/assets/** on your machine.
 
-* Replace the beginning of **ALL** 70 `s3://[MY_CUSTOM_LABELS_DEFAULT_BUCKET]/...` resource identifiers with the correct name of your S3 Rekognkition Custom Labels default bucket `s3://[YOUR_CUSTOM_LABELS_DEFAULT_BUCKET]/...`. Save and close the manifest file.
+* Replace the beginning of **ALL** 70 `s3://[MY_CUSTOM_LABELS_DEFAULT_BUCKET]/...` resource identifiers with the correct name of your S3 Rekognition Custom Labels default bucket `s3://[YOUR_CUSTOM_LABELS_DEFAULT_BUCKET]/...`. Save and close the manifest file.
 
 Navigate to the **S3 console**. Upload the updated manifest file to the root folder of your Rekognition Custom Labels default bucket:
 
@@ -311,7 +311,7 @@ training_status
 
 ## Step 6: Evaluate the training results
 
-Once the training job successfully completed, we can take a look at the model performance metrics. Amazon Rekognition Custom Labels provides various model performance metrics for (1) the entire test set and (2) for each image in your test set. 
+Once the training job completed successfully, we can take a look at the model performance metrics. Amazon Rekognition Custom Labels provides various model performance metrics for object detection models: (1) Metrics for the test set as a whole and (2) metrics for each predicted bounding box in your test set. 
 
 Via the API we can quickly have a look at the F1 score:  
 
@@ -337,9 +337,9 @@ Now, let us have a look at the other metrics:
 eval_summary$EvaluationDetails$NumberOfTrainingImages
 eval_summary$EvaluationDetails$NumberOfTestingImages
 ```
-We see that 56 images went into the training set and 14 images into the test set. This matches the 80/20 split of our data set of 70 images when we set `AutoCreate = TRUE` during the training job specification above. 
+We see that 56 images went into the training set and 14 images into the test set. This matches the 80/20 split of our data set of 70 images when we set `AutoCreate = TRUE` during the training job specification. 
 
-The parsed evaluation summary results also include various other model performance metrics besides just the F1 score:
+The parsed evaluation summary results also include various model performance metrics besides just the F1 score:
 
 ```{r}
 eval_summary %>% 
@@ -352,16 +352,17 @@ eval_summary %>%
   pivot_longer(cols = everything())
 ```
 
-According to the [official documentation](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/tr-metrics-use.html) all model performance metrics are calculated in the usual manner. The `Threshold` above is the value with which a prediction is counted as a true or false positive and is set based on the test set. 
+According to the [official documentation](https://docs.aws.amazon.com/rekognition/latest/customlabels-dg/tr-metrics-use.html) all model performance metrics are calculated in the manner you would expect. The `Threshold` above is the value with which a prediction is counted as a true or false positive and is set based on the test set. 
 
-Each image of the test set had one or more ground truth bounding boxes. The Swoosh object detector as an object detection model predicts bounding boxes in an image. Each predicted bounding box is associated with a confidence score. There are three types of bounding box predictions:
+Each image of the test set has one or more ground truth bounding boxes. The Swoosh object detector as an object detection model predicts bounding boxes in an image. Each predicted bounding box is associated with a confidence score. There are three types of bounding box predictions:
 
-* **True Positives (TP)**:
-* **False Negatives (FN)**:
-* **False Positives (FP)**:
+* **True Positives (TP)**: The object **is there** and the model **detects** it with a bounding box associated with a confidence score **above the threshold**.
 
+* **False Negatives (FN)**: The object **is there** and the model does **not detect** it OR the object **is there** and the model **detects** it with a bounding associated with a confidence score **below the threshold** 
 
-We will have a look at the individual bounding box predictions in each image of the test set. For this, we will download and parse another JSON file that includes the details for each predicted bounding box:
+* **False Positives (FP)**:  The object **is not there** but the model **detects** one.
+
+We will have a look at the individual bounding box predictions in each image of the test set. For this, we will download and parse yet another JSON file that includes the details for each predicted bounding box:
 
 
 ```{r}
@@ -381,20 +382,20 @@ test_set_results <- s3$get_object(Bucket = custom_labels_bucket,
 ```
 
 ```{r}
-object_IDs <- test_set_results$`rekognition-custom-labels-object-id`
+image_ids <- test_set_results$`rekognition-custom-labels-object-id`
 file_names <- sub(".*[/@]", "", test_set_results$`source-ref`)
 object_list <- test_set_results$`rekognition-custom-labels-evaluation-metadata`$objects
-l <- list(.x = object_IDs, .y = object_list, .z = file_names)
+l <- list(.x = image_ids, .y = object_list, .z = file_names)
 
 eval_test_set_df <- pmap_dfr(l, function(.x, .y, .z) {
        df <- .y$`rekognition-custom-labels-evaluation-details` %>% 
          select(starts_with("is-")) %>% 
          mutate(
            file_name = .z, 
-           object_id = .x,
+           image_id = .x,
            box_id = seq.int(0, nrow(.y)- 1)
          ) %>% 
-         relocate(file_name, object_id, box_id)
+         relocate(file_name, image_id, box_id)
        df
      })
 
@@ -402,46 +403,54 @@ eval_test_set_df$confidence_score <- map(test_set_results$`rekognition-custom-la
                                 "confidence") %>% flatten_dbl()
 ```
 
+
+The parsed response below shows us the test set results per predicted bounding box (`box_id`) grouped by image (`image_id`). 
+
 ```{r}
-eval_test_set_df
+select(eval_test_set_df, -file_name, -`is-true-negative`)
 ```
 
 
+The image and bounding box identifiers match the ones you will find when evaluating the individual image prediction results via the Rekognition Custom Labels Console. We will use the fifth image of our test set to illustrate this fact:
 
 ```{r}
 eval_test_set_df %>% 
-  filter(object_id == 10)
+  filter(image_id == 5) %>% 
+  select(-`is-true-negative`, -`is-false-positive`)
 ```
 
 
 ```{r echo=FALSE, out.width = "85%"}
-knitr::include_graphics("./images/console/10_evaluate_test_set_image.png")
+knitr::include_graphics("./images/console/09_evaluate_test_set_image.png")
 ```
-
+We can now start analyzing the test set results in more detail:
 
 ```{r}
 test_set_summary <- eval_test_set_df %>% 
-  select(starts_with("is-"))  %>% 
+  select(starts_with("is-"), -`is-true-negative`) %>% 
   summarise(across(where(is.logical), sum))
 
 test_set_summary
 ```
+As you can see, we have 17 ground truth bounding boxes in the 14 images of our test set. The Swoosh detector model detected 13 (True Positives) labels correctly and missed to detect 4 (False Negatives). In total, the model falsely detected 7 Swooshes which were not part of the images. 
+
+Based on the individual bounding box predictions, we are even able to calculate the model performance metrics ourselves:
 
 ```{r}
 recall <- test_set_summary$`is-true-positive` / (test_set_summary$`is-true-positive` + test_set_summary$`is-false-negative`)
 precision <- test_set_summary$`is-true-positive` / (test_set_summary$`is-false-positive` + test_set_summary$`is-true-positive`)
 f1_score <- (recall * precision / (recall + precision)) * 2
 
-recall
-precision
-f1_score
+paste0("Recall: ", recall)
+paste0("Precision: ", precision)
+paste0("F1 Score: ", f1_score)
 ```
-
+Interestingly, the model performance metrics we just calculated based on the individual bounding box predictions DO NOT match the model performance metrics calculated by Rekognition Custom Labels calculated which we extracted from the evaluation results summary file at the beginning of this section. By comparison, the model performance metrics calculated by Rekognition Custom Labels seem to underestimate the true model performance. 
 
 
 ## Step 7: Deploy your model
 
-Now, it is time to deploy our Swoosh detection model by calling `start_project_version()` on the Rekognition object. We will go with the minimum number of inference units. The number of inference units decide the maximum number of transactions per second (TPS) a model endpoint can support for real-time predictions. 
+It is time to deploy our Swoosh detection model to check its performance against the hold-out test set. You start the deployment by calling `start_project_version()` on the Rekognition object. We will go with the minimum number of inference units. The number of inference units decide the maximum number of transactions per second (TPS) a model endpoint can support for real-time predictions. 
 
 ```{r eval=FALSE}
 rek$start_project_version(ProjectVersionArn = model_arn, 
@@ -750,6 +759,7 @@ After we used the hold-out test set for making real-time predictions, we will no
 ```{r eval=FALSE}
 rek$stop_project_version(model_arn)
 ```
+
 The model stopped running when the returned status is `STOPPED`.
 
 ```{r}
