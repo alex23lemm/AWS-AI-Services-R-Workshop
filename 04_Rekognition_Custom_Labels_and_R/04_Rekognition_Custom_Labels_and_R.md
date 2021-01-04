@@ -198,7 +198,7 @@ In the Rekognition Custom Labels console you should find the generated Swoosh_da
 
 **Important**: Using an existing manifest file to create a Custom Labels dataset will also create a NEW manifest file **output.manifest** in your Custom Labels S3 default bucket underneath `/datasets/[DATASET_NAME]/manifests/output`. This new manifest file will be the one that we'll pass as a parameter when starting the training job later. 
 
-<img src="./images/console/08_swoosh_dataset_manifest_file.png" width="60%" />
+<img src="./images/console/08_swoosh_dataset_manifest.png" width="60%" />
 
 
 ## Step 4: Create your project
