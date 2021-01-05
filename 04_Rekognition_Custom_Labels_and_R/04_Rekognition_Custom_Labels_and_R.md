@@ -7,6 +7,8 @@
 
 You can use Rekognition Custom Labels to train your own machine learning models that perform image classification (image level predictions) or object detection (object/bounding box level predictions).
 
+Amazon Rekognition Custom Labels automatically selects the right machine learning algorithm to train your custom machine learning model based on the labeled data you provide without requiring deep learning expertise. 
+
 In this workshop module we will train an object detection model to detect the Swoosh, Nike's famous logo that Carolyn Davidson designed in 1971.
 
 <p align="center">
@@ -157,7 +159,7 @@ After the upload, the S3 folder structure should look like this and the **/train
 
 ## Step 3: Create a Rekognition Custom Labels dataset
 
-Now, We will create a Rekognition Custom Labels dataset. A Rekognition Custom Labels dataset references the training/test dataset residing in S3 and allows you to add labels/bounding box metadata to your images. The labeling process will generate a manifest file that includes (1) the respective labels/bounding box information and (2) the references to the images stored in S3. Without a manifest file we won't be able to start a Rekognition Custom Labels training job. 
+Now, we will create a Rekognition Custom Labels dataset. A Rekognition Custom Labels dataset references the training/test dataset residing in S3 and allows you to add labels/bounding box metadata to your images. The labeling process will generate a manifest file that includes (1) the respective labels/bounding box information and (2) the references to the images stored in S3. Without a manifest file we won't be able to start a Rekognition Custom Labels training job. 
 
 You can only create Rekognition Custom Labels datasets by using the Amazon Rekognition Custom Labels console. However, instead of creating the image labels/bounding boxes from scratch which is a kind of cumbersome manual process, you can also create a Custom Labels dataset based on an existing manifest file that already includes the respective label/bounding box information of your dataset. 
 
@@ -168,7 +170,7 @@ And you're lucky: We already created the manifest file with the necessary inform
 
 On your machine:
 
-* Open the manifest file **output.manifest** in **./04_Rekognition_Custom_Labels_and_R/assets/** on your machine.
+* Open the manifest file **output.manifest** in **./04_Rekognition_Custom_Labels_and_R/assets/**.
 
 * Replace the beginning of **ALL** 70 `s3://[YOUR_CUSTOM_LABELS_DEFAULT_BUCKET]/...` resource identifiers with the correct name of your S3 Rekognition Custom Labels default bucket. You can get the bucket name by printing  `custom_labels_bucket` to the R console. Save and close the manifest file.
 
@@ -228,7 +230,9 @@ rek$describe_projects() %>%
 
 ## Step 5: Train your model
 
-You train a model by calling `create_project_version()` which is not the most intuitive function name in this context. To train a model, the following information is needed:
+You train a model by calling `create_project_version()` which is not the most intuitive function name in this context. As you will see below, we don't need to choose nor specify the training algorithm itself. Based on the provided labeled data Amazon Rekognition Custom Labels automatically selects the right machine learning algorithm, trains a model (in our case an object detection model), and provides model performance metrics at the end of the training. 
+
+To train a model, the following information is needed:
 
 * **Name**: A unique name for the model. Best practice is to use a **project name - timestamp combination** for the model name. 
 
