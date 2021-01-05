@@ -25,11 +25,13 @@ Each workshop module consists of an R Notebook (.Rmd file) so that users can run
 
 **AWS Cloud**
 
-* It is a plus if workshop attendees have some basic familiarity with the AWS Console.
+* It is a little plus if workshop attendees have some basic familiarity with the AWS Console.
 
 * Every workshop attendee needs to have access to an AWS account using an IAM user. [AWS Free Tier](https://aws.amazon.com/de/free/) does also work for this workshop.
 
-* The IAM user needs to come with security credentials (Access key ID, Secret access key) that allows him to make secure requests to AWS service APIs. 
+* The IAM user needs to come with security credentials that allows him to access AWS (1) [programmatically via the API](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) using an **access key ID** and a **secret access key** and (2) via the AWS Management Console. 
+
+* For simplicity, we recommend to use an IAM admin user for this course: Attach the `AdministratorAccess` permissions either directly to your IAM user or to a group your user is a member of. See [the official documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html) for creating your first IAM admin user and group.
 
 **Local installations & configuration**
 
