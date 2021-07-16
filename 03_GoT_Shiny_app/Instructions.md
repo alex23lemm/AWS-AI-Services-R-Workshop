@@ -136,7 +136,8 @@ Deploying the app from the console is fairly easy. Just execute the two
 commands below:
 
 ``` r
-app_dir <- paste0(getwd(), "/03_GoT_Shiny_app")
+# Path to /03_GoT_Shiny_app
+app_dir <- getwd()
 
 deployApp(appDir = app_dir, appName = "got_shiny_ai_services_lab")
 ```
