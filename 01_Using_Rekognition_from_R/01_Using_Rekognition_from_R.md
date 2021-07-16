@@ -35,7 +35,7 @@ OK, enough talking! Let's get started.
 
 ## Loading the necessary libraries
 
-First we load the necessary libraries: Using `paws` is a no brainer here. We will use `purrr`'s magic and `tibble` to parse the responses of our API requests. We will use `readr` primarily to read binary data of image files and `magick` to add Bounding Boxes to images after having received their coordinates via an API response. 
+First, we load the necessary libraries: Using `paws` is a no-brainer here. We will use `purrr`'s magic and `tibble` to parse the responses of our API requests. We will use `readr` primarily to read binary data of image files and `magick` to add Bounding Boxes to images after having received their coordinates via an API response. 
 
 
 ```r
@@ -64,8 +64,12 @@ length(buckets$Buckets)
 ## [1] 0
 ```
 
-Since there is not yet an S3 bucket available let us create one. Make sure to specify another bucket name since bucket names are globally unique.
+In case you just got started using AWS, there should not be any S3 bucket yet available. Otherwise, you might have already created some buckets. For this tutorial, we will create a new S3 bucket. Make sure to specify a globally unique bucket name below:
 
+```r
+bucket_name <- "[YOUR-GLOBALLY-UNIQUE-BUCKET-NAME]"
+```
+By default, the bucket is created in the us-east-1 (N. Virginia) Region when calling `create_bucket`. You can optionally specify another region in the request body via the `LocationContraint` parameter. 
 
 ```r
 s3$create_bucket(Bucket = "r-and-rekognition-bucket",
@@ -92,14 +96,6 @@ buckets
 ## 1 r-and-rekognition-bucket 2020-07-11 21:02:32
 ```
 
-Let us store the name of our created bucket in a separate variable:
-
-
-```r
-my_bucket <- buckets$name[buckets$name == "r-and-rekognition-bucket"]
-```
-
-
 ## Text-in-image detection
 
 The first feature we will test is text detection in images. This will be our test image:
@@ -116,7 +112,7 @@ Let us upload the image to the S3 bucket we just created.
 
 
 ```r
-s3$put_object(Bucket = my_bucket, 
+s3$put_object(Bucket = bucket_name, 
               Body = read_file_raw("./images/tyrion_quote.jpg") , 
               Key = "tyrion_quote.jpg")
 ```
@@ -154,7 +150,7 @@ OK, that response from the endpoint acknowledging the upload looks rather crypti
 
 
 ```r
-bucket_objects <- s3$list_objects(my_bucket) %>% 
+bucket_objects <- s3$list_objects(bucket_name) %>% 
   .[["Contents"]] %>% 
   map_chr("Key")
 bucket_objects
@@ -175,7 +171,7 @@ rekognition <- rekognition()
 resp <- rekognition$detect_text(
   Image = list(
     S3Object = list(
-      Bucket = my_bucket,
+      Bucket = bucket_name,
       Name = bucket_objects
     )
   )
